@@ -535,28 +535,25 @@ button.badge-status:focus-visible {
 .table-portal .dropdown-menu,
 .table-portal-responsive .dropdown-menu,
 .dropdown-menu.portal-actions-menu {
-  z-index: 999999 !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  z-index: 9999999 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25), 0 8px 10px -6px rgba(0, 0, 0, 0.15) !important;
 }
 
-.table-portal tr:has(.dropdown.show),
-.table-portal-responsive tr:has(.dropdown.show),
-.table-portal tr:has(.dropdown-menu.show),
-.table-portal-responsive tr:has(.dropdown-menu.show) {
-  position: relative !important;
-  z-index: 99999 !important;
-}
-
-.table-portal td:has(.dropdown.show),
-.table-portal-responsive td:has(.dropdown.show),
-.table-portal td:has(.dropdown-menu.show),
-.table-portal-responsive td:has(.dropdown-menu.show) {
-  position: relative !important;
-  z-index: 99999 !important;
-}
-
-.table-responsive-portal:has(.dropdown.show) {
+/* Whenever any dropdown menu is active, ensure table and card containers do not clip */
+.table-responsive-portal:has(.show),
+.table-responsive-portal.dropdown-open-unclip,
+.table-responsive:has(.show),
+.card-portal-body:has(.show),
+.card-portal:has(.show) {
   overflow: visible !important;
+}
+
+.table-portal tr:has(.show),
+.table-portal-responsive tr:has(.show),
+.table-portal td:has(.show),
+.table-portal-responsive td:has(.show) {
+  position: relative !important;
+  z-index: 999999 !important;
 }
 
 

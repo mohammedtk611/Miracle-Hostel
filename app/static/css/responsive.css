@@ -459,6 +459,17 @@ img, svg, video, canvas, audio, iframe, embed, object {
     width: 100% !important;
     max-width: 100% !important;
   }
+
+  /* Anti-clipping exception: when any dropdown menu is open */
+  .table-responsive-portal:has(.show),
+  .table-responsive-portal.dropdown-open-unclip,
+  .table-responsive:has(.show),
+  .card-portal-body:has(.show),
+  .card-portal:has(.show) {
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
 }
 
 /* Subtle sleek touch scrollbar for screens that scroll */
@@ -631,12 +642,17 @@ img, svg, video, canvas, audio, iframe, embed, object {
   }
 
   .table-portal-responsive .dropdown-menu {
-    z-index: 999999 !important;
-    position: absolute !important;
+    z-index: 9999999 !important;
   }
 
-  .table-responsive-portal:has(.dropdown.show) {
+  .table-responsive-portal:has(.show),
+  .table-responsive-portal.dropdown-open-unclip,
+  .table-responsive:has(.show),
+  .card-portal-body:has(.show),
+  .card-portal:has(.show) {
     overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
   }
 }
 

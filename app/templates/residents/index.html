@@ -250,10 +250,16 @@
               <!-- Actions -->
               <td data-label="Actions" class="text-end">
                 <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" data-bs-boundary="body" aria-expanded="false">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" 
+                          type="button" 
+                          data-bs-toggle="dropdown" 
+                          data-bs-boundary="body" 
+                          data-bs-display="dynamic" 
+                          data-bs-popper-config='{"strategy":"fixed"}' 
+                          aria-expanded="false">
                     Actions
                   </button>
-                  <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="z-index: 999999 !important;">
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="z-index: 9999999 !important;">
                     <li>
                       <a class="dropdown-item" href="{{ url_for('residents.profile', resident_code=r.resident_code) }}">
                         <i class="bi bi-person-lines-fill me-2 text-primary"></i> View Full Profile

@@ -21,6 +21,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // 6. Initialize Bootstrap Toasts
   initToasts();
+
+  // 7. Table Action Dropdowns Anti-Clipping & Max Z-Index
+  initTableDropdowns();
 });
 
 /**
@@ -252,5 +255,97 @@ function initToasts() {
       return toast;
     });
   }
+}
+
+/**
+ * Table Action Dropdowns - Floating Fixed Strategy & Anti-Clipping
+ * Ensures action dropdowns in tables float over all containers, footers, and viewports.
+ */
+function initTableDropdowns() {
+  function configureDropdown(btn) {
+    if (typeof bootstrap !== 'undefined' && bootstrap.Dropdown) {
+      bootstrap.Dropdown.getOrCreateInstance(btn, {
+        popperConfig: function (defaultBsPopperConfig) {
+          return Object.assign({}, defaultBsPopperConfig, {
+            strategy: 'fixed'
+          });
+        }
+      });
+    }
+  }
+
+  // Configure all current table dropdown toggles
+  document.querySelectorAll(
+    '.table-portal [data-bs-toggle="dropdown"], .table-portal-responsive [data-bs-toggle="dropdown"], [data-table-dropdown]'
+  ).forEach(configureDropdown);
+
+  // Global document listener for any dynamically rendered or static table dropdowns
+  document.addEventListener('show.bs.dropdown', function (e) {
+    const toggle = e.target;
+    if (!toggle) return;
+    
+    // Check if dropdown is inside a table or responsive container
+    const tableContainer = toggle.closest('.table-responsive-portal, .table-responsive');
+    if (tableContainer) {
+      tableContainer.classList.add('dropdown-open-unclip');
+      tableContainer.style.setProperty('overflow', 'visible', 'important');
+      
+      const cardBody = tableContainer.closest('.card-portal-body');
+      if (cardBody) {
+        cardBody.style.setProperty('overflow', 'visible', 'important');
+      }
+      const card = tableContainer.closest('.card-portal');
+      if (card) {
+        card.style.setProperty('overflow', 'visible', 'important');
+      }
+      const row = toggle.closest('tr');
+      if (row) {
+        row.style.setProperty('z-index', '999999', 'important');
+        row.style.setProperty('position', 'relative', 'important');
+      }
+      const cell = toggle.closest('td');
+      if (cell) {
+        cell.style.setProperty('z-index', '999999', 'important');
+        cell.style.setProperty('position', 'relative', 'important');
+      }
+      
+      const menu = toggle.nextElementSibling && toggle.nextElementSibling.classList.contains('dropdown-menu')
+        ? toggle.nextElementSibling
+        : (toggle.parentElement ? toggle.parentElement.querySelector('.dropdown-menu') : null);
+      if (menu) {
+        menu.style.setProperty('z-index', '9999999', 'important');
+      }
+    }
+  });
+
+  document.addEventListener('hidden.bs.dropdown', function (e) {
+    const toggle = e.target;
+    if (!toggle) return;
+
+    const tableContainer = toggle.closest('.table-responsive-portal, .table-responsive');
+    if (tableContainer) {
+      tableContainer.classList.remove('dropdown-open-unclip');
+      tableContainer.style.removeProperty('overflow');
+      
+      const cardBody = tableContainer.closest('.card-portal-body');
+      if (cardBody) {
+        cardBody.style.removeProperty('overflow');
+      }
+      const card = tableContainer.closest('.card-portal');
+      if (card) {
+        card.style.removeProperty('overflow');
+      }
+      const row = toggle.closest('tr');
+      if (row) {
+        row.style.removeProperty('z-index');
+        row.style.removeProperty('position');
+      }
+      const cell = toggle.closest('td');
+      if (cell) {
+        cell.style.removeProperty('z-index');
+        cell.style.removeProperty('position');
+      }
+    }
+  });
 }
 
