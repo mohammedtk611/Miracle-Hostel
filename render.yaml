@@ -29,3 +29,4 @@ services:
         value: "365"
       - key: STORAGE_BACKEND
         value: local_private
+
