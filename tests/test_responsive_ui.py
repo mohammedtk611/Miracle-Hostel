@@ -266,8 +266,10 @@ def test_responsive_css_rules_and_breakpoints():
     assert '@media (min-width: 376px) and (max-width: 767.98px)' in css
     assert '@media (min-width: 768px) and (max-width: 1023.98px)' in css
 
-    # Table to card transformation
+    # Tabular list layout on mobile
     assert '.table-portal-responsive' in css
+    assert 'display: table !important' in css
+    assert 'table-header-group !important' in css
     assert 'content: attr(data-label)' in css
 
     # Off-canvas sidebar
