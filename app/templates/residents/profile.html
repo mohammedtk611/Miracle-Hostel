@@ -329,8 +329,17 @@
                 </tr>
               {% else %}
                 <tr>
-                  <td colspan="7" class="text-center py-4 text-muted">
-                    No payment transactions recorded for this resident yet.
+                  <td colspan="7" class="p-0 border-0">
+                    <div class="portal-empty-state py-4">
+                      <div class="empty-state-icon-circle" style="width: 48px; height: 48px; font-size: 1.25rem;">
+                        <i class="bi bi-wallet2"></i>
+                      </div>
+                      <div class="empty-state-title fs-6">No Transactions Recorded</div>
+                      <div class="empty-state-desc mb-2">No payment transactions have been logged for this resident yet.</div>
+                      <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+                        <i class="bi bi-plus-lg me-1"></i> Record First Transaction
+                      </button>
+                    </div>
                   </td>
                 </tr>
               {% endfor %}

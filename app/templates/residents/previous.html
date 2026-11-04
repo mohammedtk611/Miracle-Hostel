@@ -220,9 +220,17 @@
             </tr>
           {% else %}
             <tr>
-              <td colspan="9" class="text-center py-5 text-muted">
-                <i class="bi bi-folder2-open fs-1 d-block mb-2 text-secondary"></i>
-                No previous resident records found matching your filter criteria.
+              <td colspan="9" class="p-0 border-0">
+                <div class="portal-empty-state py-5">
+                  <div class="empty-state-icon-circle">
+                    <i class="bi bi-clock-history"></i>
+                  </div>
+                  <div class="empty-state-title">No Departed Residents</div>
+                  <div class="empty-state-desc">When an active resident departs, they are listed here under the automated 30-day retention and reactivation window.</div>
+                  <a href="{{ url_for('residents.index') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-people me-1"></i> View Active Residents Directory
+                  </a>
+                </div>
               </td>
             </tr>
           {% endfor %}

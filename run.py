@@ -17,7 +17,7 @@ from app.extensions import db
 from app.models import Admin, Branch
 from app.models.audit_log import AuditAction
 from app.services.audit_service import AuditService
-from app.services.seed_service import seed_database_sample_data
+from app.services.seed_service import seed_database_sample_data, seed_default_branches, clear_all_resident_and_dummy_data
 from app.services.migration_service import MigrationService
 
 app = create_app(os.environ.get('FLASK_ENV', 'development'))
@@ -116,7 +116,7 @@ def run_server():
             if not Admin.query.first():
                 seed_or_create_admin()
             if not Branch.query.first():
-                seed_database_sample_data()
+                seed_default_branches()
 
     requested_port = int(os.environ.get('PORT', 5000))
     host = '0.0.0.0'
@@ -159,6 +159,13 @@ def init_db(seed):
             print("[Miracle Hostel] Database initialized safely without sample demonstration data.")
 
 
+@app.cli.command("clear-data")
+def clear_data_cli():
+    """Clear all resident profiles, payments, and dummy data while preserving admin & branches."""
+    with app.app_context():
+        clear_all_resident_and_dummy_data()
+
+
 @app.cli.command("seed-db")
 def seed_db():
     """CLI command to explicitly seed sample branches, residents, and payments (development only)."""
@@ -192,6 +199,9 @@ if __name__ == '__main__':
                 print("[Miracle Hostel] Database initialized and sample demonstration data seeded.")
             else:
                 print("[Miracle Hostel] Database initialized safely without sample demonstration data.")
+    elif args and args[0] in ('clear-data', 'clear-resident-data'):
+        with app.app_context():
+            clear_all_resident_and_dummy_data()
     elif args and args[0] == 'seed-db':
         with app.app_context():
             db.create_all()

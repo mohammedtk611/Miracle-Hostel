@@ -130,6 +130,7 @@
   font-size: 0.875rem;
   text-decoration: none;
   transition: all 0.15s ease-in-out;
+  position: relative;
 }
 
 .nav-link-portal i,
@@ -151,9 +152,10 @@
 }
 
 .nav-link-portal.active {
-  background-color: #EDF2F7;
+  background-color: #F1F5F9;
   color: var(--color-primary-dark);
   font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--color-primary);
 }
 
 .nav-link-portal.active i {
@@ -332,6 +334,13 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-color: #CBD5E1;
 }
 
 .stat-card::before {

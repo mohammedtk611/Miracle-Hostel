@@ -290,14 +290,30 @@
             </tr>
           {% else %}
             <tr>
-              <td colspan="8" class="text-center py-5 text-muted">
-                <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
-                No residents found matching your active filter criteria.
-                <div class="mt-2">
-                  <a href="{{ url_for('residents.index') }}" class="btn btn-sm btn-outline-primary">
-                    Clear All Filters
-                  </a>
-                </div>
+              <td colspan="8" class="p-0 border-0">
+                {% if search_query or selected_branch != 'all' or selected_status != 'ALL' or selected_deposit_status != 'ALL' or selected_rent_status != 'ALL' %}
+                  <div class="portal-empty-state py-5">
+                    <div class="empty-state-icon-circle">
+                      <i class="bi bi-funnel"></i>
+                    </div>
+                    <div class="empty-state-title">No Matching Residents</div>
+                    <div class="empty-state-desc">No residents matched your active filter or search keywords.</div>
+                    <a href="{{ url_for('residents.index') }}" class="btn btn-outline-primary btn-sm">
+                      <i class="bi bi-x-circle me-1"></i> Clear All Filters
+                    </a>
+                  </div>
+                {% else %}
+                  <div class="portal-empty-state py-5">
+                    <div class="empty-state-icon-circle">
+                      <i class="bi bi-people"></i>
+                    </div>
+                    <div class="empty-state-title">No Residents Registered Yet</div>
+                    <div class="empty-state-desc">Your resident database is clean. Admitted residents will appear in this directory with real-time deposit and rent status tracking.</div>
+                    <a href="{{ url_for('residents.add') }}" class="btn btn-primary btn-sm">
+                      <i class="bi bi-person-plus me-1"></i> Register First Resident
+                    </a>
+                  </div>
+                {% endif %}
               </td>
             </tr>
           {% endfor %}

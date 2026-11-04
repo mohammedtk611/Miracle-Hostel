@@ -197,9 +197,17 @@
             </tr>
           {% else %}
             <tr>
-              <td colspan="7" class="text-center py-4 text-muted">
-                <i class="bi bi-building-exclamation fs-3 d-block mb-2 text-secondary"></i>
-                No branches found matching your search or filter criteria.
+              <td colspan="8" class="p-0 border-0">
+                <div class="portal-empty-state py-5">
+                  <div class="empty-state-icon-circle">
+                    <i class="bi bi-building"></i>
+                  </div>
+                  <div class="empty-state-title">No Hostel Branches Found</div>
+                  <div class="empty-state-desc">No hostel branches match your search criteria. You can create a new hostel branch location anytime.</div>
+                  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addBranchModal">
+                    <i class="bi bi-plus-lg me-1"></i> Add New Branch
+                  </button>
+                </div>
               </td>
             </tr>
           {% endfor %}

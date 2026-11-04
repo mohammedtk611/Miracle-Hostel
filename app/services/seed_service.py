@@ -9,13 +9,80 @@ from app.models import Branch, Resident, Payment, ResidentStatus, PaymentType, P
 from app.services.aadhaar_service import AadhaarSecurityService
 
 
-def seed_database_sample_data(force=False):
+def seed_default_branches():
     """
-    Seed initial branches, residents, and payments if database is empty.
-    If force=True, seeds regardless of current counts.
+    Seed initial hostel branches if database has no branches.
+    Clean state with 0 residents.
+    """
+    if Branch.query.first():
+        return False
+
+    branch1 = Branch(
+        branch_name="Miracle Branch 1",
+        branch_code="BR-AN-01",
+        address="14, 2nd Avenue, Anna Nagar East, Chennai 600102",
+        contact_number="+91 98401 23456",
+        total_beds=20,
+        is_active=True
+    )
+    branch2 = Branch(
+        branch_name="Miracle Branch 2",
+        branch_code="BR-OMR-02",
+        address="Plot 88, Rajiv Gandhi Salai, Thoraipakkam, Chennai 600097",
+        contact_number="+91 98402 34567",
+        total_beds=20,
+        is_active=True
+    )
+    branch3 = Branch(
+        branch_name="Miracle Branch 3",
+        branch_code="BR-GD-03",
+        address="7, Industrial Estate Main Rd, Guindy, Chennai 600032",
+        contact_number="+91 98403 45678",
+        total_beds=20,
+        is_active=True
+    )
+    branch4 = Branch(
+        branch_name="Miracle Branch 4",
+        branch_code="BR-PR-04",
+        address="22, Mount-Poonamallee High Rd, Porur, Chennai 600116",
+        contact_number="+91 98404 56789",
+        total_beds=20,
+        is_active=True
+    )
+
+    db.session.add_all([branch1, branch2, branch3, branch4])
+    db.session.commit()
+    print("[Miracle Hostel] Default branches initialized (clean state, 0 residents).")
+    return True
+
+
+def clear_all_resident_and_dummy_data():
+    """
+    Safely delete all resident profiles, payment records, obligations,
+    stay histories, and retention logs.
+    Preserves Administrator accounts and Hostel Branches.
+    """
+    from app.models import PaymentObligation, ResidentStayHistory, DataRetentionLog, AuditLog
+    p_count = Payment.query.delete()
+    po_count = PaymentObligation.query.delete()
+    sh_count = ResidentStayHistory.query.delete()
+    dr_count = DataRetentionLog.query.delete()
+    r_count = Resident.query.delete()
+    AuditLog.query.filter(AuditLog.entity_type.in_(['Resident', 'Payment', 'PaymentObligation'])).delete(synchronize_session=False)
+    db.session.commit()
+    print(f"[Miracle Hostel] Successfully cleared all resident data: {r_count} residents, {p_count} payments, {po_count} obligations purged.")
+    return {
+        'residents_cleared': r_count,
+        'payments_cleared': p_count,
+        'obligations_cleared': po_count
+    }
+
+
+def seed_database_sample_data(force=False, include_residents=True):
+    """
+    Seed initial branches and optional sample residents (primarily used by test suites).
     """
     if not force and Branch.query.first():
-        # Already seeded
         return False
 
     today = date.today()

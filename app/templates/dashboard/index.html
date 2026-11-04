@@ -152,8 +152,17 @@
                 </tr>
               {% else %}
                 <tr>
-                  <td colspan="6" class="text-center py-4 text-muted">
-                    No recent resident admissions recorded for this selection.
+                  <td colspan="6" class="p-0 border-0">
+                    <div class="portal-empty-state py-5">
+                      <div class="empty-state-icon-circle">
+                        <i class="bi bi-person-check"></i>
+                      </div>
+                      <div class="empty-state-title">No Recent Resident Admissions</div>
+                      <div class="empty-state-desc">Newly registered residents across your active branches will be displayed here.</div>
+                      <a href="{{ url_for('residents.add') }}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-person-plus me-1"></i> Register First Resident
+                      </a>
+                    </div>
                   </td>
                 </tr>
               {% endfor %}
@@ -218,17 +227,23 @@
               <div class="d-flex justify-content-between align-items-center mt-1 small">
                 <span class="text-muted font-monospace">{{ b.branch_code }} &bull; {{ b.occupancy_pct }}% Occupancy</span>
                 <div class="d-flex align-items-center gap-1">
-                  <span class="badge bg-success-subtle text-success border border-success-subtle" title="Residents staying">
-                    <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i>{{ b.staying_count }} Stay
-                  </span>
-                  {% if b.leaving_count > 0 %}
-                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" title="Residents leaving this or next month">
-                      <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i>{{ b.leaving_count }} Notice
+                  {% if b.occupied_count > 0 %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle" title="Residents staying">
+                      <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i>{{ b.staying_count }} Stay
+                    </span>
+                    {% if b.leaving_count > 0 %}
+                      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" title="Residents leaving this or next month">
+                        <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i>{{ b.leaving_count }} Notice
+                      </span>
+                    {% endif %}
+                    <span class="badge bg-light text-dark border" title="Vacant beds available">
+                      {{ b.available_beds }} Free
+                    </span>
+                  {% else %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold" title="All beds available">
+                      {{ b.available_beds }} Free
                     </span>
                   {% endif %}
-                  <span class="badge bg-light text-dark border" title="Vacant beds available">
-                    {{ b.available_beds }} Free
-                  </span>
                 </div>
               </div>
             </div>
@@ -314,8 +329,17 @@
             </tr>
           {% else %}
             <tr>
-              <td colspan="8" class="text-center py-4 text-muted">
-                No recent payment transactions found.
+              <td colspan="8" class="p-0 border-0">
+                <div class="portal-empty-state py-5">
+                  <div class="empty-state-icon-circle">
+                    <i class="bi bi-wallet2"></i>
+                  </div>
+                  <div class="empty-state-title">No Recent Transactions</div>
+                  <div class="empty-state-desc">Verified security deposits and monthly rent payments will appear in this ledger.</div>
+                  <a href="{{ url_for('payments.index') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-cash-stack me-1"></i> Open Payments Ledger
+                  </a>
+                </div>
               </td>
             </tr>
           {% endfor %}

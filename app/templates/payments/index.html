@@ -272,9 +272,17 @@
             </tr>
           {% else %}
             <tr>
-              <td colspan="9" class="text-center py-5 text-muted">
-                <i class="bi bi-cash-stack fs-1 d-block mb-2 text-secondary"></i>
-                No payment transactions matched your search or filter options.
+              <td colspan="9" class="p-0 border-0">
+                <div class="portal-empty-state py-5">
+                  <div class="empty-state-icon-circle">
+                    <i class="bi bi-wallet2"></i>
+                  </div>
+                  <div class="empty-state-title">No Payment Transactions Recorded</div>
+                  <div class="empty-state-desc">Verified security deposits, admission rent, and monthly ledger entries will appear here once recorded.</div>
+                  <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#recordPaymentModalGlobal">
+                    <i class="bi bi-plus-circle me-1"></i> Record First Payment
+                  </button>
+                </div>
               </td>
             </tr>
           {% endfor %}
