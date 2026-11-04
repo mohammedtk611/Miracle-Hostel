@@ -451,11 +451,12 @@ img, svg, video, canvas, audio, iframe, embed, object {
   background-color: var(--color-surface);
 }
 
-/* On mobile screens, prevent horizontal sideways scrolling when marked */
+/* On mobile screens, prevent horizontal sideways scrolling while allowing touch scroll */
 @media (max-width: 767.98px) {
   .table-responsive-portal,
   .table-responsive-portal.no-scroll-mobile {
-    overflow-x: hidden !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
     width: 100% !important;
     max-width: 100% !important;
   }
@@ -522,9 +523,9 @@ img, svg, video, canvas, audio, iframe, embed, object {
   .table-portal-responsive {
     display: table !important;
     width: 100% !important;
-    min-width: 0 !important;
+    min-width: 100% !important;
     max-width: 100% !important;
-    table-layout: auto !important;
+    table-layout: fixed !important;
     border-collapse: collapse !important;
     border-spacing: 0 !important;
     font-size: 0.8125rem !important;
@@ -542,17 +543,17 @@ img, svg, video, canvas, audio, iframe, embed, object {
 
   .table-portal-responsive thead th:not(.d-none):not([class*="d-none"]):not(.col-admission-date) {
     display: table-cell !important;
-    padding: 0.5rem 0.35rem !important;
+    padding: 0.45rem 0.2rem !important;
     font-size: 0.725rem !important;
     font-weight: 700 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.03em !important;
+    letter-spacing: 0.02em !important;
     color: var(--color-text-muted) !important;
     background-color: var(--color-surface-hover) !important;
     border-bottom: 2px solid var(--color-border) !important;
     border-top: none !important;
     white-space: normal !important;
-    line-height: 1.2 !important;
+    line-height: 1.15 !important;
     vertical-align: middle !important;
   }
 
@@ -586,9 +587,9 @@ img, svg, video, canvas, audio, iframe, embed, object {
   /* Compact cell layout with comfortable font sizes & spacing */
   .table-portal-responsive tbody td:not(.d-none):not([class*="d-none"]):not(.col-admission-date) {
     display: table-cell !important;
-    padding: 0.5rem 0.35rem !important;
+    padding: 0.45rem 0.2rem !important;
     font-size: 0.8125rem !important;
-    line-height: 1.3 !important;
+    line-height: 1.25 !important;
     color: var(--color-text-main) !important;
     border: none !important;
     border-bottom: 1px solid var(--color-border-subtle) !important;
@@ -597,17 +598,73 @@ img, svg, video, canvas, audio, iframe, embed, object {
     min-height: auto !important;
   }
 
-  .table-portal-responsive thead th.text-end,
-  .table-portal-responsive tbody td.text-end,
+  /* Specific column proportions on mobile (Total = 100%) */
+  .table-portal-responsive thead th.col-resident,
+  .table-portal-responsive tbody td.col-resident,
+  .table-portal-responsive tbody td[data-label="Resident"] {
+    width: 30% !important;
+    max-width: 30% !important;
+    padding-left: 0.35rem !important;
+    padding-right: 0.2rem !important;
+  }
+
+  .table-portal-responsive thead th.col-branch,
+  .table-portal-responsive tbody td.col-branch,
+  .table-portal-responsive tbody td[data-label="Branch"] {
+    width: 17% !important;
+    max-width: 17% !important;
+    text-align: center !important;
+    padding-left: 0.15rem !important;
+    padding-right: 0.15rem !important;
+  }
+
+  .table-portal-responsive thead th.col-deposit,
+  .table-portal-responsive tbody td.col-deposit,
+  .table-portal-responsive tbody td[data-label="Deposit"] {
+    width: 17% !important;
+    max-width: 17% !important;
+    text-align: center !important;
+    padding-left: 0.15rem !important;
+    padding-right: 0.15rem !important;
+  }
+
+  .table-portal-responsive thead th.col-rent,
+  .table-portal-responsive tbody td.col-rent,
+  .table-portal-responsive tbody td[data-label="Rent"] {
+    width: 19% !important;
+    max-width: 19% !important;
+    text-align: center !important;
+    padding-left: 0.15rem !important;
+    padding-right: 0.15rem !important;
+  }
+
+  /* Sticky Right Pinned Actions Column for Mobile Screens */
   .table-portal-responsive thead th.col-action,
+  .table-portal-responsive thead th.text-end,
   .table-portal-responsive tbody td.col-action,
-  .table-portal-responsive thead th[data-label="Action"],
-  .table-portal-responsive tbody td[data-label="Action"],
+  .table-portal-responsive tbody td.text-end,
   .table-portal-responsive thead th[data-label="Actions"],
-  .table-portal-responsive tbody td[data-label="Actions"] {
+  .table-portal-responsive thead th[data-label="Action"],
+  .table-portal-responsive tbody td[data-label="Actions"],
+  .table-portal-responsive tbody td[data-label="Action"] {
+    width: 17% !important;
+    max-width: 17% !important;
     text-align: right !important;
-    white-space: nowrap !important;
-    padding-right: 0.5rem !important;
+    padding-left: 0.2rem !important;
+    padding-right: 0.35rem !important;
+    position: sticky !important;
+    right: 0 !important;
+    background-color: var(--color-surface) !important;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.08) !important;
+    z-index: 20 !important;
+  }
+
+  .table-portal-responsive thead th.col-action,
+  .table-portal-responsive thead th.text-end,
+  .table-portal-responsive thead th[data-label="Actions"],
+  .table-portal-responsive thead th[data-label="Action"] {
+    background-color: var(--color-surface-hover) !important;
+    z-index: 21 !important;
   }
 
   /* Suppress pseudo-element box labels */
@@ -623,37 +680,43 @@ img, svg, video, canvas, audio, iframe, embed, object {
     box-shadow: none !important;
   }
 
-  /* Phone-Ratio Avatar: 28px */
+  /* Phone-Ratio Avatar: 26px */
   .avatar-thumb {
-    width: 28px !important;
-    height: 28px !important;
-    min-width: 28px !important;
+    width: 26px !important;
+    height: 26px !important;
+    min-width: 26px !important;
     border-radius: 50% !important;
     font-size: 0.7rem !important;
     flex-shrink: 0 !important;
   }
 
-  /* Phone-Ratio Badges: Proportional, crisp pill buttons */
+  /* Phone-Ratio Badges: Proportional, clean two-tier or stacked pill buttons */
   .table-portal-responsive button.badge-status,
   .table-portal-responsive .badge-btn {
-    min-height: 26px !important;
-    padding: 0.2rem 0.45rem !important;
-    font-size: 0.725rem !important;
+    min-height: 28px !important;
+    padding: 0.2rem 0.3rem !important;
+    font-size: 0.7rem !important;
     font-weight: 600 !important;
-    border-radius: 9999px !important;
-    gap: 0.2rem !important;
-    line-height: 1.2 !important;
+    border-radius: 6px !important;
+    line-height: 1.15 !important;
     display: inline-flex !important;
+    flex-direction: column !important;
     align-items: center !important;
-    white-space: nowrap !important;
+    justify-content: center !important;
+    text-align: center !important;
+    white-space: normal !important;
+    max-width: 78px !important;
+    width: 100% !important;
   }
 
   .table-portal-responsive .badge-status,
   .table-portal-responsive .badge {
-    padding: 0.2rem 0.4rem !important;
-    font-size: 0.7rem !important;
+    padding: 0.2rem 0.3rem !important;
+    font-size: 0.675rem !important;
     font-weight: 600 !important;
     border-radius: 5px !important;
+    text-align: center !important;
+    white-space: normal !important;
   }
 
   /* Compact action button on mobile tabular list */
@@ -662,7 +725,7 @@ img, svg, video, canvas, audio, iframe, embed, object {
   .table-portal-responsive tbody td.col-action,
   .table-portal-responsive tbody td.text-end {
     border-top: none !important;
-    padding-top: 0.4rem !important;
+    padding-top: 0.35rem !important;
     text-align: right !important;
     white-space: nowrap !important;
   }
@@ -672,7 +735,7 @@ img, svg, video, canvas, audio, iframe, embed, object {
   .table-portal-responsive tbody td.col-action .btn,
   .table-portal-responsive tbody td.text-end .btn {
     min-height: 26px !important;
-    padding: 0.2rem 0.45rem !important;
+    padding: 0.2rem 0.35rem !important;
     font-size: 0.725rem !important;
     width: auto !important;
     display: inline-flex !important;
@@ -709,12 +772,12 @@ img, svg, video, canvas, audio, iframe, embed, object {
 /* Extra small mobile screens (320px - 430px) */
 @media (max-width: 430px) {
   .table-portal-responsive thead th:not(.d-none):not([class*="d-none"]):not(.col-admission-date) {
-    padding: 0.4rem 0.2rem !important;
+    padding: 0.35rem 0.15rem !important;
     font-size: 0.675rem !important;
   }
 
   .table-portal-responsive tbody td:not(.d-none):not([class*="d-none"]):not(.col-admission-date) {
-    padding: 0.45rem 0.2rem !important;
+    padding: 0.4rem 0.15rem !important;
     font-size: 0.775rem !important;
   }
 
@@ -727,8 +790,8 @@ img, svg, video, canvas, audio, iframe, embed, object {
 
   .table-portal-responsive .badge-status,
   .table-portal-responsive .badge {
-    padding: 0.15rem 0.3rem !important;
-    font-size: 0.675rem !important;
+    padding: 0.15rem 0.25rem !important;
+    font-size: 0.65rem !important;
   }
 
   .table-portal-responsive tbody td[data-label="Actions"] .btn,
@@ -736,7 +799,7 @@ img, svg, video, canvas, audio, iframe, embed, object {
   .table-portal-responsive tbody td.col-action .btn,
   .table-portal-responsive tbody td.text-end .btn {
     min-height: 24px !important;
-    padding: 0.15rem 0.35rem !important;
+    padding: 0.15rem 0.3rem !important;
     font-size: 0.7rem !important;
   }
 }

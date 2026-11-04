@@ -91,13 +91,22 @@
         <thead>
           <tr>
             <th class="d-none d-md-table-cell">Resident ID</th>
-            <th>Resident</th>
-            <th>Branch</th>
+            <th class="col-resident">Resident</th>
+            <th class="col-branch text-center text-md-start">Branch</th>
             <th class="d-none d-md-table-cell">Notice Initiated</th>
-            <th>Expected Departure</th>
-            <th>30-Day Window</th>
-            <th>Dues Balance</th>
-            <th class="text-end">Actions</th>
+            <th class="col-departure">
+              <span class="d-none d-md-inline">Expected Departure</span>
+              <span class="d-md-none">Departure</span>
+            </th>
+            <th class="col-window">
+              <span class="d-none d-md-inline">30-Day Window</span>
+              <span class="d-md-none">Window</span>
+            </th>
+            <th class="col-dues">
+              <span class="d-none d-md-inline">Dues Balance</span>
+              <span class="d-md-none">Dues</span>
+            </th>
+            <th class="text-end col-action">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -113,10 +122,10 @@
                 <div class="d-flex align-items-center gap-2">
                   <img src="{{ r.photograph_path }}" alt="{{ r.full_name }}" class="avatar-thumb">
                   <div class="min-w-0">
-                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-bold text-dark text-decoration-none hover-primary text-truncate d-block" style="max-width: 145px;">
+                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-bold text-dark text-decoration-none hover-primary text-truncate d-block" style="max-width: 95px;">
                       {{ r.full_name }}
                     </a>
-                    <div class="small text-muted text-truncate" style="max-width: 145px;">
+                    <div class="small text-muted text-truncate" style="max-width: 95px;">
                       <span class="d-md-none font-monospace text-secondary fw-semibold">{{ r.resident_code }} &bull; </span>{{ r.room_number }}
                     </div>
                   </div>
@@ -124,8 +133,11 @@
               </td>
 
               <!-- Branch -->
-              <td data-label="Branch">
-                <span class="badge bg-light text-dark border">{{ r.branch.branch_name if r.branch else '—' }}</span>
+              <td data-label="Branch" class="col-branch text-center text-md-start">
+                <span class="badge bg-light text-dark border text-center">
+                  <span class="d-none d-md-inline">{{ r.branch.branch_name if r.branch else '—' }}</span>
+                  <span class="d-md-none font-monospace">{{ r.branch.branch_code if r.branch else '—' }}</span>
+                </span>
               </td>
 
               <!-- Notice Initiated Date -->
@@ -134,38 +146,47 @@
               </td>
 
               <!-- Expected Departure Date -->
-              <td data-label="Departure">
-                <span class="fw-semibold text-dark">{{ r.leaving_date|format_date }}</span>
+              <td data-label="Departure" class="col-departure">
+                <span class="fw-semibold text-dark">
+                  <span class="d-none d-md-inline">{{ r.leaving_date|format_date }}</span>
+                  <span class="d-md-none font-monospace">{{ r.leaving_date.strftime('%d %b') if r.leaving_date else '—' }}</span>
+                </span>
               </td>
 
               <!-- 30-Day Retention Window Countdown -->
-              <td data-label="30d Window">
+              <td data-label="30d Window" class="col-window">
                 {% if r.leaving_days_remaining <= 5 %}
                   <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-semibold">
-                    <i class="bi bi-hourglass-bottom me-1"></i> {{ r.leaving_days_remaining }}d left (Expiring)
+                    <span class="d-none d-md-inline"><i class="bi bi-hourglass-bottom me-1"></i> {{ r.leaving_days_remaining }}d left (Expiring)</span>
+                    <span class="d-md-none">{{ r.leaving_days_remaining }}d left</span>
                   </span>
                 {% elif r.leaving_days_remaining <= 15 %}
                   <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold">
-                    <i class="bi bi-hourglass-split me-1"></i> {{ r.leaving_days_remaining }} days left
+                    <span class="d-none d-md-inline"><i class="bi bi-hourglass-split me-1"></i> {{ r.leaving_days_remaining }} days left</span>
+                    <span class="d-md-none">{{ r.leaving_days_remaining }}d</span>
                   </span>
                 {% else %}
                   <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-semibold">
-                    <i class="bi bi-clock-history me-1"></i> {{ r.leaving_days_remaining }} days left
+                    <span class="d-none d-md-inline"><i class="bi bi-clock-history me-1"></i> {{ r.leaving_days_remaining }} days left</span>
+                    <span class="d-md-none">{{ r.leaving_days_remaining }}d</span>
                   </span>
                 {% endif %}
               </td>
 
               <!-- Dues Balance -->
-              <td data-label="Balance">
+              <td data-label="Balance" class="col-dues text-center">
                 {% if r.total_financial_outstanding > 0 %}
-                  <span class="badge-status badge-unpaid">Due: {{ r.total_financial_outstanding|currency }}</span>
+                  <span class="badge-status badge-unpaid">
+                    <span class="d-none d-md-inline">Due: {{ r.total_financial_outstanding|currency }}</span>
+                    <span class="d-md-none">{{ r.total_financial_outstanding|currency }}</span>
+                  </span>
                 {% else %}
                   <span class="badge-status badge-paid">Settled</span>
                 {% endif %}
               </td>
 
               <!-- Actions (Elevated Z-Index) -->
-              <td data-label="Actions" class="text-end">
+              <td data-label="Actions" class="text-end col-action">
                 <div class="dropdown d-inline-block">
                   <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" 
                           type="button" 

@@ -899,15 +899,23 @@ def serve_photo(filename):
 def render_deposit_badge_html(resident_id: int, full_name: str, resident_code: str, status: str, amount: float = 0.0) -> str:
     """Helper to render dynamic HTML badge for security deposit status."""
     status_upper = status.upper()
+    desktop_amount_str = f"₹ {amount:,.2f}" if amount > 0 else ""
+    mobile_amount_str = f"₹ {amount:,.0f}" if amount > 0 else ""
     if status_upper == 'PAID':
         badge_class = 'badge-paid'
-        label = f"Paid (₹ {amount:,.2f})" if amount > 0 else "Paid"
+        desktop_label = f"Paid ({desktop_amount_str})" if desktop_amount_str else "Paid"
+        mobile_label = (
+            f'<span class="d-block">Paid <i class="bi bi-pencil-fill opacity-50" style="font-size: 0.55rem;"></i></span>'
+            f'<span class="d-block font-monospace opacity-75" style="font-size: 0.625rem;">{mobile_amount_str}</span>'
+        ) if mobile_amount_str else '<span>Paid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.6rem;"></i></span>'
     elif status_upper == 'PARTIAL':
         badge_class = 'badge-partial'
-        label = "Partial"
+        desktop_label = "Partial"
+        mobile_label = '<span>Partial <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.6rem;"></i></span>'
     else:
         badge_class = 'badge-unpaid'
-        label = "Unpaid"
+        desktop_label = "Unpaid"
+        mobile_label = '<span>Unpaid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.6rem;"></i></span>'
 
     return (
         f'<button type="button" '
@@ -921,7 +929,8 @@ def render_deposit_badge_html(resident_id: int, full_name: str, resident_code: s
         f'data-current-status="{status_upper}" '
         f'data-current-amount="{amount}" '
         f'title="Click to update Security Deposit status">'
-        f'{label} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>'
+        f'<span class="d-none d-md-inline">{desktop_label} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i></span>'
+        f'<span class="d-md-none text-center lh-1">{mobile_label}</span>'
         f'</button>'
     )
 
@@ -929,15 +938,26 @@ def render_deposit_badge_html(resident_id: int, full_name: str, resident_code: s
 def render_rent_badge_html(resident_id: int, full_name: str, resident_code: str, status: str, amount: float = 0.0, outstanding: float = 0.0) -> str:
     """Helper to render dynamic HTML badge for rent payment status."""
     status_upper = status.upper()
+    desktop_due_str = f"₹ {outstanding:,.2f}" if outstanding > 0 else ""
+    mobile_due_str = f"₹ {outstanding:,.0f}" if outstanding > 0 else ""
     if status_upper == 'PAID':
         badge_class = 'badge-paid'
-        label = "Paid"
+        desktop_label = "Paid"
+        mobile_label = '<span>Paid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.6rem;"></i></span>'
     elif status_upper == 'PARTIAL':
         badge_class = 'badge-partial'
-        label = f"Partial (Due: ₹ {outstanding:,.2f})" if outstanding > 0 else "Partial"
+        desktop_label = f"Partial (Due: {desktop_due_str})" if desktop_due_str else "Partial"
+        mobile_label = (
+            f'<span class="d-block">Partial <i class="bi bi-pencil-fill opacity-50" style="font-size: 0.55rem;"></i></span>'
+            f'<span class="d-block font-monospace opacity-75" style="font-size: 0.625rem;">Due: {mobile_due_str}</span>'
+        ) if mobile_due_str else '<span>Partial <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.6rem;"></i></span>'
     else:
         badge_class = 'badge-unpaid'
-        label = f"Unpaid (Due: ₹ {outstanding:,.2f})" if outstanding > 0 else "Unpaid"
+        desktop_label = f"Unpaid (Due: {desktop_due_str})" if desktop_due_str else "Unpaid"
+        mobile_label = (
+            f'<span class="d-block">Unpaid <i class="bi bi-pencil-fill opacity-50" style="font-size: 0.55rem;"></i></span>'
+            f'<span class="d-block font-monospace opacity-75" style="font-size: 0.625rem;">Due: {mobile_due_str}</span>'
+        ) if mobile_due_str else '<span>Unpaid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.6rem;"></i></span>'
 
     return (
         f'<button type="button" '
@@ -951,7 +971,8 @@ def render_rent_badge_html(resident_id: int, full_name: str, resident_code: str,
         f'data-current-status="{status_upper}" '
         f'data-current-amount="{amount}" '
         f'title="Click to update Monthly Rent status">'
-        f'{label} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>'
+        f'<span class="d-none d-md-inline">{desktop_label} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i></span>'
+        f'<span class="d-md-none text-center lh-1">{mobile_label}</span>'
         f'</button>'
     )
 

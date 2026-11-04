@@ -93,14 +93,20 @@
       <table class="table-portal table-portal-responsive">
         <thead>
           <tr>
-            <th class="d-none d-md-table-cell">Resident ID</th>
-            <th>Resident</th>
-            <th>Branch</th>
+            <th class="d-none d-md-table-cell col-res-id">Resident ID</th>
+            <th class="col-resident">Resident</th>
+            <th class="col-branch text-center text-md-start">Branch</th>
             <th class="d-none d-md-table-cell col-admission-date">Admission Date</th>
-            <th>Deposit Status</th>
-            <th>Rent Status</th>
-            <th class="d-none d-lg-table-cell">Resident Status</th>
-            <th class="text-end">Actions</th>
+            <th class="col-deposit text-center">
+              <span class="d-none d-md-inline">Deposit Status</span>
+              <span class="d-md-none">Deposit</span>
+            </th>
+            <th class="col-rent text-center">
+              <span class="d-none d-md-inline">Rent Status</span>
+              <span class="d-md-none">Rent</span>
+            </th>
+            <th class="d-none d-lg-table-cell col-status">Resident Status</th>
+            <th class="text-end col-action">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -112,14 +118,14 @@
               </td>
 
               <!-- Photograph & Name (With code on mobile) -->
-              <td data-label="Resident">
+              <td data-label="Resident" class="col-resident">
                 <div class="d-flex align-items-center gap-2">
                   <img src="{{ r.photograph_path }}" alt="{{ r.full_name }}" class="avatar-thumb">
                   <div class="min-w-0">
-                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-bold text-dark text-decoration-none hover-primary text-truncate d-block" style="max-width: 145px;">
+                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-bold text-dark text-decoration-none hover-primary text-truncate d-block" style="max-width: 95px;">
                       {{ r.full_name }}
                     </a>
-                    <div class="small text-muted text-truncate" style="max-width: 145px;">
+                    <div class="small text-muted text-truncate" style="max-width: 95px;">
                       <span class="d-md-none font-monospace text-secondary fw-semibold">{{ r.resident_code }} &bull; </span>{{ r.room_number }}
                     </div>
                   </div>
@@ -127,8 +133,11 @@
               </td>
 
               <!-- Branch -->
-              <td data-label="Branch">
-                <span class="badge bg-light text-dark border">{{ r.branch_name }}</span>
+              <td data-label="Branch" class="col-branch text-center text-md-start">
+                <span class="badge bg-light text-dark border text-center">
+                  <span class="d-none d-md-inline">{{ r.branch_name }}</span>
+                  <span class="d-md-none font-monospace">{{ r.branch_code }}</span>
+                </span>
               </td>
 
               <!-- Admission Date (Hidden on mobile, viewable via Profile Action) -->
@@ -137,7 +146,7 @@
               </td>
 
               <!-- Deposit Status -->
-              <td data-label="Deposit">
+              <td data-label="Deposit" class="col-deposit text-center">
                 <div id="deposit-status-{{ r.id }}" class="quick-status-cell">
                   {% if r.deposit_status == 'PAID' %}
                     <button type="button" 
@@ -151,7 +160,11 @@
                       data-current-status="PAID" 
                       data-current-amount="{{ r.security_deposit_amount }}" 
                       title="Click to update Security Deposit status">
-                      Paid ({{ r.security_deposit|currency }}) <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                      <span class="d-none d-md-inline">Paid ({{ r.security_deposit|currency }}) <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i></span>
+                      <span class="d-md-none text-center lh-1">
+                        <span class="d-block">Paid <i class="bi bi-pencil-fill opacity-50" style="font-size: 0.55rem;"></i></span>
+                        <span class="d-block font-monospace opacity-75" style="font-size: 0.625rem;">{{ r.security_deposit|currency }}</span>
+                      </span>
                     </button>
                   {% elif r.deposit_status == 'PARTIAL' %}
                     <button type="button" 
@@ -165,7 +178,7 @@
                       data-current-status="PARTIAL" 
                       data-current-amount="{{ r.security_deposit_amount }}" 
                       title="Click to update Security Deposit status">
-                      Partial <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                      <span>Partial <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.6rem;"></i></span>
                     </button>
                   {% else %}
                     <button type="button" 
@@ -179,14 +192,14 @@
                       data-current-status="UNPAID" 
                       data-current-amount="{{ r.security_deposit_amount }}" 
                       title="Click to update Security Deposit status">
-                      Unpaid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                      <span>Unpaid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.6rem;"></i></span>
                     </button>
                   {% endif %}
                 </div>
               </td>
 
               <!-- Rent Status -->
-              <td data-label="Rent">
+              <td data-label="Rent" class="col-rent text-center">
                 <div id="rent-status-{{ r.id }}" class="quick-status-cell">
                   {% if r.rent_status == 'PAID' %}
                     <button type="button" 
@@ -200,7 +213,7 @@
                       data-current-status="PAID" 
                       data-current-amount="{{ r.outstanding_rent }}" 
                       title="Click to update Monthly Rent status">
-                      Paid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                      <span>Paid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.6rem;"></i></span>
                     </button>
                   {% elif r.rent_status == 'PARTIAL' %}
                     <button type="button" 
@@ -214,7 +227,13 @@
                       data-current-status="PARTIAL" 
                       data-current-amount="{{ r.outstanding_rent }}" 
                       title="Click to update Monthly Rent status">
-                      Partial{% if r.outstanding_rent > 0 %} (Due: {{ r.outstanding_rent|currency }}){% endif %} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                      <span class="d-none d-md-inline">Partial{% if r.outstanding_rent > 0 %} (Due: {{ r.outstanding_rent|currency }}){% endif %} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i></span>
+                      <span class="d-md-none text-center lh-1">
+                        <span class="d-block">Partial <i class="bi bi-pencil-fill opacity-50" style="font-size: 0.55rem;"></i></span>
+                        {% if r.outstanding_rent > 0 %}
+                          <span class="d-block font-monospace opacity-75" style="font-size: 0.625rem;">Due: {{ r.outstanding_rent|currency }}</span>
+                        {% endif %}
+                      </span>
                     </button>
                   {% else %}
                     <button type="button" 
@@ -228,7 +247,13 @@
                       data-current-status="UNPAID" 
                       data-current-amount="{{ r.outstanding_rent }}" 
                       title="Click to update Monthly Rent status">
-                      Unpaid{% if r.outstanding_rent > 0 %} (Due: {{ r.outstanding_rent|currency }}){% endif %} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                      <span class="d-none d-md-inline">Unpaid{% if r.outstanding_rent > 0 %} (Due: {{ r.outstanding_rent|currency }}){% endif %} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i></span>
+                      <span class="d-md-none text-center lh-1">
+                        <span class="d-block">Unpaid <i class="bi bi-pencil-fill opacity-50" style="font-size: 0.55rem;"></i></span>
+                        {% if r.outstanding_rent > 0 %}
+                          <span class="d-block font-monospace opacity-75" style="font-size: 0.625rem;">Due: {{ r.outstanding_rent|currency }}</span>
+                        {% endif %}
+                      </span>
                     </button>
                   {% endif %}
                 </div>
@@ -248,7 +273,7 @@
               </td>
 
               <!-- Actions -->
-              <td data-label="Actions" class="text-end">
+              <td data-label="Actions" class="text-end col-action">
                 <div class="dropdown">
                   <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" 
                           type="button" 
