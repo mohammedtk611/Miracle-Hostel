@@ -137,3 +137,4 @@ def test_js_theme_toggle_implementation():
     assert 'prefers-color-scheme' in main_js
     assert 'toggleTheme()' in main_js
     assert "window.addEventListener('storage'" in main_js
+

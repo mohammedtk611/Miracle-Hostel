@@ -162,13 +162,13 @@
       <table class="table-portal table-portal-responsive">
         <thead>
           <tr>
-            <th>Payment ID</th>
-            <th>Resident Name & Code</th>
+            <th class="d-none d-md-table-cell">Payment ID</th>
+            <th>Resident</th>
             <th>Branch</th>
-            <th>Payment Type</th>
+            <th>Type</th>
             <th>Amount</th>
-            <th>Payment Date</th>
-            <th>Method & Reference</th>
+            <th class="d-none d-md-table-cell">Payment Date</th>
+            <th class="d-none d-lg-table-cell">Method & Reference</th>
             <th>Status</th>
             <th class="text-end">Actions</th>
           </tr>
@@ -177,7 +177,7 @@
           {% for p in payments %}
             <tr>
               <!-- Payment ID -->
-              <td data-label="Payment ID">
+              <td data-label="Payment ID" class="d-none d-md-table-cell">
                 <span class="font-monospace fw-bold text-dark">{{ p.payment_id }}</span>
               </td>
 
@@ -229,10 +229,10 @@
               </td>
 
               <!-- Payment Date -->
-              <td data-label="Date">{{ p.payment_date|format_date }}</td>
+              <td data-label="Date" class="d-none d-md-table-cell">{{ p.payment_date|format_date }}</td>
 
               <!-- Method & Reference -->
-              <td data-label="Method">
+              <td data-label="Method" class="d-none d-lg-table-cell">
                 <span class="badge bg-light text-secondary border">{{ p.payment_method or 'CASH' }}</span>
                 {% if p.transaction_reference %}
                   <div class="small text-muted font-monospace">{{ p.transaction_reference }}</div>

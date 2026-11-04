@@ -119,14 +119,14 @@
       <table class="table-portal table-portal-responsive">
         <thead>
           <tr>
-            <th>Resident ID</th>
-            <th>Resident Name & Photo</th>
+            <th class="d-none d-md-table-cell">Resident ID</th>
+            <th>Resident</th>
             <th>Branch</th>
-            <th>Admission Date</th>
+            <th class="d-none d-md-table-cell col-admission-date">Admission Date</th>
             <th>Leaving Date</th>
-            <th>Outstanding Balance</th>
-            <th>Retention Deadline</th>
-            <th>Remaining Period</th>
+            <th>Balance</th>
+            <th class="d-none d-lg-table-cell">Retention Deadline</th>
+            <th>Remaining</th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
@@ -134,7 +134,7 @@
           {% for r in residents %}
             <tr>
               <!-- Resident ID -->
-              <td data-label="Resident ID">
+              <td data-label="Resident ID" class="d-none d-md-table-cell">
                 <span class="font-monospace fw-bold text-dark">{{ r.resident_code }}</span>
                 <div class="small text-muted">{{ r.room_number }}</div>
               </td>
@@ -143,10 +143,13 @@
               <td data-label="Resident">
                 <div class="d-flex align-items-center gap-2">
                   <img src="{{ r.photograph_path }}" alt="{{ r.full_name }}" class="avatar-thumb">
-                  <div>
-                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-semibold text-dark text-decoration-none">
+                  <div class="min-w-0">
+                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-semibold text-dark text-decoration-none text-truncate d-block" style="max-width: 140px;">
                       {{ r.full_name }}
                     </a>
+                    <div class="small text-muted text-truncate" style="max-width: 140px;">
+                      <span class="d-md-none font-monospace text-secondary fw-semibold">{{ r.resident_code }} &bull; </span>{{ r.room_number }}
+                    </div>
                   </div>
                 </div>
               </td>
@@ -157,7 +160,7 @@
               </td>
 
               <!-- Admission Date -->
-              <td data-label="Admission">{{ r.admission_date|format_date }}</td>
+              <td data-label="Admission" class="d-none d-md-table-cell col-admission-date">{{ r.admission_date|format_date }}</td>
 
               <!-- Leaving Date -->
               <td data-label="Leaving Date">
@@ -175,7 +178,7 @@
               </td>
 
               <!-- Retention Deadline -->
-              <td data-label="Deadline">
+              <td data-label="Deadline" class="d-none d-lg-table-cell">
                 <span class="fw-bold text-dark">{{ r.retention.deadline|format_date }}</span>
               </td>
 

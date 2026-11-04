@@ -96,7 +96,7 @@
             <th class="d-none d-md-table-cell">Resident ID</th>
             <th>Resident</th>
             <th>Branch</th>
-            <th class="d-none d-md-table-cell">Admission Date</th>
+            <th class="d-none d-md-table-cell col-admission-date">Admission Date</th>
             <th>Deposit Status</th>
             <th>Rent Status</th>
             <th class="d-none d-lg-table-cell">Resident Status</th>
@@ -132,7 +132,7 @@
               </td>
 
               <!-- Admission Date (Hidden on mobile, viewable via Profile Action) -->
-              <td data-label="Admission" class="d-none d-md-table-cell">
+              <td data-label="Admission" class="d-none d-md-table-cell col-admission-date">
                 <span>{{ r.admission_date|format_date }}</span>
               </td>
 

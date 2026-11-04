@@ -112,10 +112,10 @@
               <tr>
                 <th>Resident</th>
                 <th>Branch</th>
-                <th class="d-none d-md-table-cell">Admission Date</th>
+                <th class="d-none d-md-table-cell col-admission-date">Admission Date</th>
                 <th>Room / Bed</th>
-                <th>Deposit Status</th>
-                <th class="text-end">Action</th>
+                <th>Deposit</th>
+                <th class="text-end col-action">Action</th>
               </tr>
             </thead>
             <tbody>
@@ -124,17 +124,19 @@
                   <td data-label="Resident">
                     <div class="d-flex align-items-center gap-2">
                       <img src="{{ res.photograph_path }}" alt="{{ res.full_name }}" class="avatar-thumb">
-                      <div>
-                        <div class="fw-semibold text-dark">{{ res.full_name }}</div>
-                        <span class="text-muted small">{{ res.resident_code }}</span>
+                      <div class="min-w-0">
+                        <div class="fw-semibold text-dark text-truncate" style="max-width: 100px;">{{ res.full_name }}</div>
+                        <span class="text-muted small font-monospace d-block">{{ res.resident_code }}</span>
                       </div>
                     </div>
                   </td>
                   <td data-label="Branch">
                     <span class="badge bg-light text-dark border">{{ res.branch_code }}</span>
                   </td>
-                  <td data-label="Admission" class="d-none d-md-table-cell">{{ res.admission_date|format_date }}</td>
-                  <td data-label="Room / Bed">{{ res.room_number }}</td>
+                  <td data-label="Admission" class="d-none d-md-table-cell col-admission-date">{{ res.admission_date|format_date }}</td>
+                  <td data-label="Room / Bed">
+                    <span class="small fw-semibold text-dark text-nowrap">{{ res.room_number }}</span>
+                  </td>
                   <td data-label="Deposit">
                     {% if res.deposit_status == 'PAID' %}
                       <span class="badge-status badge-paid">Paid</span>
@@ -144,8 +146,8 @@
                       <span class="badge-status badge-pending">Pending</span>
                     {% endif %}
                   </td>
-                  <td data-label="Action" class="text-end">
-                    <a href="{{ url_for('residents.profile', resident_code=res.resident_code) }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="View Full Profile (includes Admission Date, Room & Stay details)">
+                  <td data-label="Action" class="text-end col-action">
+                    <a href="{{ url_for('residents.profile', resident_code=res.resident_code) }}" class="btn btn-sm btn-outline-primary py-1 px-2 text-nowrap" title="View Full Profile (includes Admission Date, Room & Stay details)">
                       <i class="bi bi-eye"></i> View
                     </a>
                   </td>
