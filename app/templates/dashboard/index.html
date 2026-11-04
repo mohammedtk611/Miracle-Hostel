@@ -107,7 +107,7 @@
       </div>
       <div class="card-portal-body p-0">
         <div class="table-responsive-portal">
-          <table class="table-portal">
+          <table class="table-portal table-portal-responsive">
             <thead>
               <tr>
                 <th>Resident</th>
@@ -121,7 +121,7 @@
             <tbody>
               {% for res in recent_admissions %}
                 <tr>
-                  <td>
+                  <td data-label="Resident">
                     <div class="d-flex align-items-center gap-2">
                       <img src="{{ res.photograph_path }}" alt="{{ res.full_name }}" class="avatar-thumb">
                       <div>
@@ -130,12 +130,12 @@
                       </div>
                     </div>
                   </td>
-                  <td>
+                  <td data-label="Branch">
                     <span class="badge bg-light text-dark border">{{ res.branch_code }}</span>
                   </td>
-                  <td>{{ res.admission_date|format_date }}</td>
-                  <td>{{ res.room_number }}</td>
-                  <td>
+                  <td data-label="Admission">{{ res.admission_date|format_date }}</td>
+                  <td data-label="Room / Bed">{{ res.room_number }}</td>
+                  <td data-label="Deposit">
                     {% if res.deposit_status == 'PAID' %}
                       <span class="badge-status badge-paid">Paid</span>
                     {% elif res.deposit_status == 'PARTIAL' %}
@@ -144,7 +144,7 @@
                       <span class="badge-status badge-pending">Pending</span>
                     {% endif %}
                   </td>
-                  <td class="text-end">
+                  <td data-label="Action" class="text-end">
                     <a href="{{ url_for('residents.profile', resident_code=res.resident_code) }}" class="btn btn-sm btn-outline-primary py-1 px-2">
                       <i class="bi bi-eye"></i> View
                     </a>

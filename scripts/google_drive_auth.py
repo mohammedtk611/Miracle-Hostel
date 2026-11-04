@@ -100,3 +100,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     run_auth(client_id=args.client_id, client_secret=args.client_secret)
+

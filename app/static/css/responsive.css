@@ -1,37 +1,189 @@
 /* ==========================================================================
-   MIRACLE HOSTEL MANAGEMENT PORTAL - RESPONSIVE STYLES
-   Breakpoints: 
-   - Desktop: >= 992px
-   - Tablet: 768px - 991px
-   - Mobile: < 768px
+   MIRACLE HOSTEL MANAGEMENT PORTAL - COMPLETE MOBILE RESPONSIVENESS SYSTEM
+   Mobile-First Architecture & Viewport Standards:
+   - Extra Small Mobile: 320px - 375px
+   - Standard Mobile:    376px - 430px
+   - Large Mobile:       431px - 767px
+   - Tablet:             768px - 1023px
+   - Laptop / Desktop:   1024px - 1439px
+   - Large Desktop:      1440px+
    ========================================================================== */
 
-/* Tablet & Mobile Overrides (< 992px) */
+/* -------------------------------------------------------------------------
+   1. GLOBAL FOUNDATION & RESILIENCE
+   ------------------------------------------------------------------------- */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Ensure images and media never overflow parent containers */
+img, svg, video, canvas, audio, iframe, embed, object {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Prevent long resident codes or transaction hashes from breaking layout */
+.font-monospace,
+.break-word {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* -------------------------------------------------------------------------
+   2. TOUCH ERGONOMICS & INTERACTIVE CONTROLS (Min 44px Touch Targets)
+   ------------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+  /* Prevent iOS Safari from automatically zooming in when focusing inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="date"],
+  select,
+  textarea,
+  .form-control,
+  .form-select {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+
+  /* Touch-friendly buttons */
+  .btn {
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    font-size: 0.9375rem;
+    touch-action: manipulation;
+  }
+
+  .btn-sm {
+    min-height: 38px;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+
+  /* Quick Payment Edit Badge Touch Targets */
+  button.badge-status,
+  .badge-btn {
+    min-height: 38px;
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    touch-action: manipulation;
+  }
+
+  button.badge-status:active {
+    transform: scale(0.97);
+  }
+
+  /* Touch friendly dropdown items */
+  .dropdown-item {
+    padding: 0.75rem 1rem;
+    font-size: 0.9375rem;
+  }
+
+  /* Radio selection cards in quick payment modals */
+  .status-radio-card {
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   3. MOBILE NAVIGATION DRAWER & SIDEBAR (Off-Canvas Menu < 992px)
+   ------------------------------------------------------------------------- */
 @media (max-width: 991.98px) {
   .app-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1045;
+    width: min(290px, 85vw) !important;
     transform: translateX(-100%);
-    width: var(--sidebar-width) !important;
-    box-shadow: var(--shadow-modal);
+    transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: none;
+    display: flex;
+    flex-direction: column;
+    background-color: #FFFFFF;
   }
 
   .app-sidebar.show-mobile {
     transform: translateX(0);
+    box-shadow: 0 0 35px rgba(16, 42, 67, 0.3);
   }
 
   .app-main {
     margin-left: 0 !important;
+    width: 100%;
   }
 
   .mobile-menu-btn {
-    display: flex !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0.5rem;
   }
 
-  .stat-card-grid {
-    grid-template-columns: repeat(2, 1fr);
+  /* Visible Close Button inside Mobile Drawer Brand */
+  .sidebar-close-btn {
+    background: transparent;
+    border: none;
+    color: var(--color-text-muted);
+    font-size: 1.15rem;
+    padding: 0.5rem;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 42px;
+    min-height: 42px;
+    transition: background-color 0.15s ease, color 0.15s ease;
   }
 
-  .page-container {
-    padding: 1rem;
+  .sidebar-close-btn:hover,
+  .sidebar-close-btn:active {
+    background-color: var(--color-secondary-subtle);
+    color: var(--color-primary-dark);
+  }
+
+  /* Backdrop for mobile drawer */
+  .sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(16, 42, 67, 0.55);
+    z-index: 1040;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+  }
+
+  .sidebar-backdrop.active {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* Prevent background scrolling when mobile drawer is open */
+  body.sidebar-open-mobile {
+    overflow: hidden !important;
+    touch-action: none;
   }
 
   .topbar-right .system-status-indicator {
@@ -39,102 +191,491 @@
   }
 }
 
-/* Mobile Screens (< 768px) */
+/* -------------------------------------------------------------------------
+   4. TOPBAR RESPONSIVENESS
+   ------------------------------------------------------------------------- */
+.topbar-branch-select {
+  max-width: 260px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
 @media (max-width: 767.98px) {
-  .stat-card-grid {
-    grid-template-columns: 1fr;
-    gap: 0.75rem;
+  .app-topbar {
+    padding: 0 0.875rem;
+    height: 58px;
   }
 
+  .topbar-left {
+    gap: 0.5rem;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .branch-selector-container {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .topbar-branch-select {
+    max-width: 100%;
+    width: 100%;
+    font-size: 0.8125rem !important;
+    min-height: 38px;
+    padding-left: 0.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .topbar-right {
+    gap: 0.5rem;
+  }
+
+  .topbar-admin-btn {
+    min-height: 38px;
+    padding: 0.375rem 0.625rem;
+  }
+}
+
+@media (max-width: 375px) {
   .app-topbar {
-    padding: 0 1rem;
+    padding: 0 0.5rem;
+  }
+
+  .topbar-left {
+    gap: 0.375rem;
+  }
+
+  .topbar-branch-select {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   5. PAGE CONTAINER & HEADERS
+   ------------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+  .page-container {
+    padding: 1.25rem 1rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .page-container {
+    padding: 1rem 0.75rem;
   }
 
   .page-header {
-    flex-direction: column;
+    flex-direction: column !important;
     align-items: flex-start !important;
     gap: 0.75rem;
+    margin-bottom: 1.125rem;
   }
 
   .page-header .page-actions {
     width: 100%;
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .page-header .page-actions .btn {
+    flex: 1 1 auto;
+    min-width: 130px;
+    justify-content: center;
+  }
+
+  .card-portal-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.625rem;
+  }
+
+  .card-portal-header > .d-flex:last-child,
+  .card-portal-header > .btn,
+  .card-portal-header > div:last-child:not(:first-child) {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .card-portal-header > .btn,
+  .card-portal-header > .d-flex:last-child .btn,
+  .card-portal-header > div:last-child:not(:first-child) .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+    line-height: 1.25;
+  }
+
+  .page-subtitle {
+    font-size: 0.8125rem;
+  }
+}
+
+@media (max-width: 375px) {
+  .page-container {
+    padding: 0.875rem 0.5rem;
   }
 
   .page-header .page-actions .btn {
     width: 100%;
+    flex: 1 1 100%;
   }
 
-  /* Responsive Filter Toolbars */
+  .page-title {
+    font-size: 1.15rem;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   6. DASHBOARD & STATISTIC KPI CARDS RESPONSIVENESS
+   ------------------------------------------------------------------------- */
+/* Tablet & Desktop */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  .stat-card-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.875rem;
+  }
+}
+
+/* Standard & Large Mobile: 2 Columns */
+@media (min-width: 376px) and (max-width: 767.98px) {
+  .stat-card-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem;
+    margin-bottom: 1.125rem;
+  }
+
+  .stat-card {
+    padding: 0.875rem 1rem;
+  }
+
+  .stat-card-title {
+    font-size: 0.75rem;
+  }
+
+  .stat-card-value {
+    font-size: 1.35rem;
+    line-height: 1.15;
+  }
+
+  .stat-card-subtext {
+    font-size: 0.6875rem;
+  }
+
+  .stat-card-icon {
+    width: 28px;
+    height: 28px;
+    font-size: 0.875rem;
+  }
+}
+
+/* Small Mobile: 1 Column */
+@media (max-width: 375px) {
+  .stat-card-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.625rem;
+    margin-bottom: 1rem;
+  }
+
+  .stat-card {
+    padding: 0.875rem 1rem;
+  }
+
+  .stat-card-value {
+    font-size: 1.35rem;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   7. RESPONSIVE FILTER & SEARCH TOOLBARS
+   ------------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
   .filter-toolbar {
-    flex-direction: column;
+    flex-direction: column !important;
     align-items: stretch !important;
-    gap: 0.75rem !important;
+    gap: 0.625rem !important;
   }
 
-  .filter-toolbar .filter-group {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .filter-toolbar .filter-group select,
-  .filter-toolbar .filter-group input {
+  .filter-toolbar .input-group,
+  .filter-toolbar > div,
+  .filter-toolbar form {
+    max-width: 100% !important;
     width: 100% !important;
   }
 
-  /* Form layouts single-column */
-  .form-row-responsive {
+  .filter-toolbar select,
+  .filter-toolbar input {
+    width: 100% !important;
+    min-height: 42px;
+  }
+
+  .filter-toolbar .d-flex {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .filter-toolbar .d-flex > select,
+  .filter-toolbar .d-flex > div,
+  .filter-toolbar .d-flex > a,
+  .filter-toolbar .d-flex > button {
+    flex: 1 1 100%;
+    width: 100% !important;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767.98px) {
+  /* In landscape mobile / larger mobile, pair dropdowns 2-up */
+  .filter-toolbar .d-flex > select {
+    flex: 1 1 calc(50% - 0.5rem);
+    width: auto !important;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   8. TABLE RESPONSIVENESS & MOBILE CARD TRANSFORMATION
+   ------------------------------------------------------------------------- */
+.table-responsive-portal {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile Card View for Tables (< 768px) */
+@media (max-width: 767.98px) {
+  .table-portal-responsive {
+    display: block;
+    width: 100%;
+    border: none;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+
+  .table-portal-responsive thead {
+    display: none !important;
+  }
+
+  .table-portal-responsive tbody {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-  }
-
-  /* Touch-friendly buttons and controls */
-  .btn, .form-control, .form-select {
-    min-height: 42px;
-    font-size: 0.9375rem;
-  }
-
-  /* Table container scroll wrapper */
-  .table-responsive-portal {
+    gap: 0.875rem;
     width: 100%;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    border-radius: var(--radius-sm);
+    padding: 0.75rem;
   }
 
-  .table-portal th, 
-  .table-portal td {
-    padding: 0.625rem 0.75rem;
-    font-size: 0.8125rem;
+  .table-portal-responsive tbody tr {
+    display: block;
+    background-color: #FFFFFF;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.875rem 1rem;
+    box-shadow: var(--shadow-subtle);
+    margin-bottom: 0;
   }
 
-  /* Modal bottom sheet on mobile */
+  .table-portal-responsive tbody tr:hover td {
+    background-color: transparent !important;
+  }
+
+  .table-portal-responsive tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px dashed var(--color-border-subtle);
+    border-top: none;
+    font-size: 0.875rem;
+    text-align: right;
+    min-height: 38px;
+    width: 100%;
+  }
+
+  /* Responsive Cell Key Label (Extracted from data-label) */
+  .table-portal-responsive tbody td::before {
+    content: attr(data-label);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 0.75rem;
+    text-align: left;
+    flex-shrink: 0;
+  }
+
+  /* Resident photo & details cell in mobile card view */
+  .table-portal-responsive tbody td[data-label="Resident"],
+  .table-portal-responsive tbody td[data-label="Branch Name & Code"] {
+    text-align: right;
+  }
+
+  /* Actions row styling in card view */
+  .table-portal-responsive tbody td[data-label="Actions"] {
+    border-bottom: none;
+    padding-top: 0.75rem;
+    margin-top: 0.25rem;
+    border-top: 1px solid var(--color-border-subtle);
+    justify-content: flex-end;
+  }
+
+  .table-portal-responsive tbody td[data-label="Actions"] .dropdown,
+  .table-portal-responsive tbody td[data-label="Actions"] .btn-group,
+  .table-portal-responsive tbody td[data-label="Actions"] .d-flex {
+    width: 100%;
+  }
+
+  .table-portal-responsive tbody td[data-label="Actions"] .btn {
+    flex: 1 1 auto;
+    min-height: 42px;
+    justify-content: center;
+  }
+
+  .table-portal-responsive tbody td[data-label="Actions"] .dropdown-toggle {
+    width: 100%;
+    min-height: 42px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .table-portal-responsive tbody td[data-label="Actions"] .dropdown-menu {
+    width: 100%;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   9. RESIDENT PROFILE RESPONSIVENESS
+   ------------------------------------------------------------------------- */
+@media (max-width: 991.98px) {
+  /* Profile header wrapping */
+  .page-header .d-flex.align-items-center.gap-3 {
+    flex-wrap: wrap;
+    gap: 0.75rem !important;
+  }
+
+  /* Center photograph on mobile profile view */
+  .avatar-lg {
+    width: 108px;
+    height: 108px;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+  }
+
+  /* Retention banner mobile layout */
+  .alert-warning.d-flex.flex-wrap {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.875rem !important;
+  }
+
+  .alert-warning .d-flex.align-items-center.gap-2 {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Key-value description lists in profile card */
+  dl.row dt, dl.row dd {
+    font-size: 0.875rem;
+  }
+
+  dl.row dt {
+    margin-top: 0.375rem;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   10. MODAL DIALOGS RESPONSIVENESS
+   ------------------------------------------------------------------------- */
+@media (max-width: 767.98px) {
   .modal-dialog {
-    margin: 0.5rem;
+    margin: 0.5rem auto;
+    max-width: calc(100% - 1rem);
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
+  }
+
+  .modal-content {
+    max-height: calc(100vh - 1.5rem);
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-md);
+  }
+
+  .modal-header {
+    padding: 0.875rem 1rem;
+    flex-shrink: 0;
+  }
+
+  .modal-title {
+    font-size: 1rem;
+  }
+
+  .modal-body {
+    padding: 1rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto;
+  }
+
+  .modal-footer {
+    padding: 0.75rem 1rem;
+    flex-direction: column-reverse;
+    gap: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .modal-footer .btn {
+    width: 100%;
+    margin: 0;
+    min-height: 44px;
   }
 }
 
-/* Backdrop for mobile drawer */
-.sidebar-backdrop {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(16, 42, 67, 0.4);
-  z-index: 1025;
-  backdrop-filter: blur(2px);
+/* -------------------------------------------------------------------------
+   11. AUTHENTICATION & LOGIN SCREEN RESPONSIVENESS
+   ------------------------------------------------------------------------- */
+@media (max-width: 575.98px) {
+  body.auth-page,
+  .login-container {
+    padding: 0.75rem;
+    width: 100%;
+  }
+
+  .login-container .card-portal-body {
+    padding: 1.25rem 1rem;
+  }
+
+  .login-brand-header {
+    margin-bottom: 1.25rem;
+  }
+
+  .login-brand-logo {
+    width: 48px;
+    height: 48px;
+    font-size: 1.35rem;
+  }
 }
 
-.sidebar-backdrop.active {
-  display: block;
-}
+/* -------------------------------------------------------------------------
+   12. NOTIFICATIONS & TOASTS
+   ------------------------------------------------------------------------- */
+@media (max-width: 575.98px) {
+  .toast-container {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    bottom: 0.75rem !important;
+    width: auto !important;
+  }
 
-/* Helper to hide mobile menu button on desktop */
-.mobile-menu-btn {
-  display: none;
+  .portal-toast {
+    width: 100% !important;
+  }
 }
-

@@ -83,7 +83,7 @@
   </div>
   <div class="card-portal-body p-0">
     <div class="table-responsive-portal">
-      <table class="table-portal">
+      <table class="table-portal table-portal-responsive">
         <thead>
           <tr>
             <th>Branch Name & Code</th>
@@ -99,34 +99,34 @@
           {% for b in branches %}
             <tr class="{% if not b.is_active %}bg-light text-muted{% endif %}">
               <!-- Name & Code -->
-              <td>
+              <td data-label="Branch">
                 <div class="fw-bold text-dark">{{ b.branch_name }}</div>
                 <span class="badge bg-light text-secondary border font-monospace">{{ b.branch_code }}</span>
               </td>
 
               <!-- Address -->
-              <td style="max-width: 250px;">
+              <td data-label="Address" style="max-width: 250px;">
                 <span class="small text-muted">{{ b.address }}</span>
               </td>
 
               <!-- Contact -->
-              <td>
+              <td data-label="Contact">
                 <span class="text-dark">{{ b.contact_number }}</span>
               </td>
 
               <!-- Active Residents -->
-              <td>
+              <td data-label="Active">
                 <span class="fw-bold text-success">{{ b.active_residents_count }}</span>
                 <span class="small text-muted">residents</span>
               </td>
 
               <!-- Total Lifetime -->
-              <td>
+              <td data-label="Total Residents">
                 <span class="text-dark">{{ b.total_residents_count }}</span>
               </td>
 
               <!-- Status -->
-              <td>
+              <td data-label="Status">
                 {% if b.is_active %}
                   <span class="badge-status badge-active">Active</span>
                 {% else %}
@@ -135,7 +135,7 @@
               </td>
 
               <!-- Actions -->
-              <td class="text-end">
+              <td data-label="Actions" class="text-end">
                 <div class="d-flex justify-content-end gap-1">
                   <!-- Edit Button -->
                   <button 

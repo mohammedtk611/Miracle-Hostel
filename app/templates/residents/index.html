@@ -90,7 +90,7 @@
 <div class="card-portal">
   <div class="card-portal-body p-0">
     <div class="table-responsive-portal">
-      <table class="table-portal">
+      <table class="table-portal table-portal-responsive">
         <thead>
           <tr>
             <th>Resident ID</th>
@@ -107,13 +107,13 @@
           {% for r in residents %}
             <tr>
               <!-- Resident ID -->
-              <td>
+              <td data-label="Resident ID">
                 <span class="font-monospace fw-bold text-dark">{{ r.resident_code }}</span>
                 <div class="small text-muted">{{ r.room_number }}</div>
               </td>
 
               <!-- Photograph & Name -->
-              <td>
+              <td data-label="Resident">
                 <div class="d-flex align-items-center gap-2">
                   <img src="{{ r.photograph_path }}" alt="{{ r.full_name }}" class="avatar-thumb">
                   <div>
@@ -128,17 +128,17 @@
               </td>
 
               <!-- Branch -->
-              <td>
+              <td data-label="Branch">
                 <span class="badge bg-light text-dark border">{{ r.branch_name }}</span>
               </td>
 
               <!-- Admission Date -->
-              <td>
+              <td data-label="Admission">
                 <span>{{ r.admission_date|format_date }}</span>
               </td>
 
               <!-- Deposit Status -->
-              <td>
+              <td data-label="Deposit">
                 <div id="deposit-status-{{ r.id }}" class="quick-status-cell">
                   {% if r.deposit_status == 'PAID' %}
                     <button type="button" 
@@ -187,7 +187,7 @@
               </td>
 
               <!-- Rent Status -->
-              <td>
+              <td data-label="Rent">
                 <div id="rent-status-{{ r.id }}" class="quick-status-cell">
                   {% if r.rent_status == 'PAID' %}
                     <button type="button" 
@@ -236,7 +236,7 @@
               </td>
 
               <!-- Resident Status -->
-              <td>
+              <td data-label="Status">
                 {% if r.resident_status == 'ACTIVE' %}
                   <span class="badge-status badge-active">Active</span>
                 {% else %}
@@ -245,7 +245,7 @@
               </td>
 
               <!-- Actions -->
-              <td class="text-end">
+              <td data-label="Actions" class="text-end">
                 <div class="dropdown">
                   <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                     Actions

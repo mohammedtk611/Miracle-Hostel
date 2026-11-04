@@ -273,7 +273,7 @@
       </div>
       <div class="card-portal-body p-0">
         <div class="table-responsive-portal">
-          <table class="table-portal">
+          <table class="table-portal table-portal-responsive">
             <thead>
               <tr>
                 <th>Payment ID</th>
@@ -288,10 +288,10 @@
             <tbody>
               {% for p in payments %}
                 <tr>
-                  <td>
+                  <td data-label="Payment ID">
                     <span class="font-monospace fw-bold text-dark">{{ p.payment_id }}</span>
                   </td>
-                  <td>
+                  <td data-label="Type">
                     {% if p.payment_type == 'SECURITY_DEPOSIT' %}
                       <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Deposit</span>
                     {% elif p.payment_type == 'ADMISSION_RENT' %}
@@ -304,17 +304,17 @@
                       <span class="badge bg-light text-dark border">{{ p.payment_type }}</span>
                     {% endif %}
                   </td>
-                  <td>
+                  <td data-label="Amount">
                     <span class="fw-bold text-dark">{{ p.amount|currency }}</span>
                   </td>
-                  <td>{{ p.payment_date|format_date }}</td>
-                  <td>
+                  <td data-label="Date">{{ p.payment_date|format_date }}</td>
+                  <td data-label="Method">
                     <span class="badge bg-light text-secondary border">{{ p.payment_method }}</span>
                     {% if p.transaction_reference %}
                       <div class="small text-muted font-monospace">{{ p.transaction_reference }}</div>
                     {% endif %}
                   </td>
-                  <td>
+                  <td data-label="Status">
                     {% if p.payment_status == 'PAID' %}
                       <span class="badge-status badge-paid">Paid</span>
                     {% elif p.payment_status == 'PARTIAL' %}
@@ -323,7 +323,7 @@
                       <span class="badge-status badge-unpaid">Unpaid</span>
                     {% endif %}
                   </td>
-                  <td class="small text-muted" style="max-width: 200px;">
+                  <td data-label="Notes" class="small text-muted" style="max-width: 200px;">
                     {{ p.notes or '—' }}
                   </td>
                 </tr>

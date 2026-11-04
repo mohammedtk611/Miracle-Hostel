@@ -116,7 +116,7 @@
 <div class="card-portal">
   <div class="card-portal-body p-0">
     <div class="table-responsive-portal">
-      <table class="table-portal">
+      <table class="table-portal table-portal-responsive">
         <thead>
           <tr>
             <th>Resident ID</th>
@@ -134,13 +134,13 @@
           {% for r in residents %}
             <tr>
               <!-- Resident ID -->
-              <td>
+              <td data-label="Resident ID">
                 <span class="font-monospace fw-bold text-dark">{{ r.resident_code }}</span>
                 <div class="small text-muted">{{ r.room_number }}</div>
               </td>
 
               <!-- Photograph & Name -->
-              <td>
+              <td data-label="Resident">
                 <div class="d-flex align-items-center gap-2">
                   <img src="{{ r.photograph_path }}" alt="{{ r.full_name }}" class="avatar-thumb">
                   <div>
@@ -152,20 +152,20 @@
               </td>
 
               <!-- Branch -->
-              <td>
+              <td data-label="Branch">
                 <span class="badge bg-light text-dark border">{{ r.branch_name }}</span>
               </td>
 
               <!-- Admission Date -->
-              <td>{{ r.admission_date|format_date }}</td>
+              <td data-label="Admission">{{ r.admission_date|format_date }}</td>
 
               <!-- Leaving Date -->
-              <td>
+              <td data-label="Leaving Date">
                 <span class="text-danger fw-semibold">{{ r.leaving_date|format_date }}</span>
               </td>
 
               <!-- Outstanding Balance -->
-              <td>
+              <td data-label="Balance">
                 {% if r.total_financial_outstanding > 0 %}
                   <span class="text-danger fw-bold">{{ r.total_financial_outstanding|currency }}</span>
                   <div class="small text-danger">Unsettled</div>
@@ -175,12 +175,12 @@
               </td>
 
               <!-- Retention Deadline -->
-              <td>
+              <td data-label="Deadline">
                 <span class="fw-bold text-dark">{{ r.retention.deadline|format_date }}</span>
               </td>
 
               <!-- Remaining Retention Period Badge -->
-              <td>
+              <td data-label="Retention">
                 {% if r.retention.urgency == 'expired' %}
                   <span class="badge-status badge-expired" title="30-day retention has passed. Eligible for automated purge.">
                     <i class="bi bi-exclamation-octagon-fill"></i> Eligible for Deletion
@@ -198,7 +198,7 @@
               </td>
 
               <!-- Actions -->
-              <td class="text-end">
+              <td data-label="Actions" class="text-end">
                 <div class="d-flex align-items-center justify-content-end gap-1">
                   <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="View Profile & Financial Ledger">
                     <i class="bi bi-eye"></i> View

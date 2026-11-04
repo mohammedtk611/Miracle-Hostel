@@ -308,11 +308,11 @@
       </div>
 
       <!-- Action Buttons -->
-      <div class="d-flex align-items-center justify-content-end gap-2">
-        <a href="{{ url_for('residents.index') }}" class="btn btn-secondary">
+      <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center justify-content-sm-end gap-2 mb-4">
+        <a href="{{ url_for('residents.index') }}" class="btn btn-secondary order-2 order-sm-1">
           Cancel
         </a>
-        <button type="submit" class="btn btn-primary px-4 fw-semibold">
+        <button type="submit" class="btn btn-primary px-4 fw-semibold order-1 order-sm-2">
           <i class="bi bi-check2-circle me-1"></i> Save Resident
         </button>
       </div>

@@ -30,7 +30,24 @@ function initSidebar() {
   const sidebar = document.querySelector('.app-sidebar');
   const desktopToggle = document.getElementById('sidebarDesktopToggle');
   const mobileToggle = document.getElementById('mobileMenuToggle');
+  const mobileClose = document.getElementById('sidebarMobileClose');
   const backdrop = document.getElementById('sidebarBackdrop');
+
+  function openMobileSidebar() {
+    if (!sidebar || !backdrop) return;
+    sidebar.classList.add('show-mobile');
+    backdrop.classList.add('active');
+    document.body.classList.add('sidebar-open-mobile');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeMobileSidebar() {
+    if (!sidebar || !backdrop) return;
+    sidebar.classList.remove('show-mobile');
+    backdrop.classList.remove('active');
+    document.body.classList.remove('sidebar-open-mobile');
+    document.body.style.overflow = '';
+  }
 
   if (desktopToggle) {
     desktopToggle.addEventListener('click', function () {
@@ -45,27 +62,50 @@ function initSidebar() {
     }
   }
 
-  if (mobileToggle && sidebar && backdrop) {
-    mobileToggle.addEventListener('click', function () {
-      sidebar.classList.add('show-mobile');
-      backdrop.classList.add('active');
+  if (mobileToggle) {
+    mobileToggle.addEventListener('click', function (e) {
+      e.preventDefault();
+      openMobileSidebar();
     });
+  }
 
+  if (mobileClose) {
+    mobileClose.addEventListener('click', function (e) {
+      e.preventDefault();
+      closeMobileSidebar();
+    });
+  }
+
+  if (backdrop) {
     backdrop.addEventListener('click', function () {
-      sidebar.classList.remove('show-mobile');
-      backdrop.classList.remove('active');
+      closeMobileSidebar();
     });
+  }
 
-    // Close sidebar on link click in mobile view
-    sidebar.querySelectorAll('.nav-link-portal').forEach(function (link) {
+  // Close sidebar on link click in mobile view
+  if (sidebar) {
+    sidebar.querySelectorAll('.nav-link-portal, .brand-link').forEach(function (link) {
       link.addEventListener('click', function () {
         if (window.innerWidth < 992) {
-          sidebar.classList.remove('show-mobile');
-          backdrop.classList.remove('active');
+          closeMobileSidebar();
         }
       });
     });
   }
+
+  // Close mobile drawer on Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && sidebar && sidebar.classList.contains('show-mobile')) {
+      closeMobileSidebar();
+    }
+  });
+
+  // Automatically reset mobile state if viewport is resized to desktop
+  window.addEventListener('resize', function () {
+    if (window.innerWidth >= 992 && sidebar && sidebar.classList.contains('show-mobile')) {
+      closeMobileSidebar();
+    }
+  });
 }
 
 /**
