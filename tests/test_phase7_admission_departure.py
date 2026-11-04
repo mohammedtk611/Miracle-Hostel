@@ -215,10 +215,10 @@ def test_verify_leaving_date_and_validation(auth_client, app):
 
 
 # =========================================================================
-# 6. VERIFY 30-DAY RETENTION DEADLINE
+# 6. VERIFY 1-YEAR (365-DAY) RETENTION DEADLINE
 # =========================================================================
 def test_verify_30_day_retention_deadline(auth_client, app):
-    """Verify retention deadline is mathematically leaving_date + 30 days."""
+    """Verify retention deadline is mathematically leaving_date + 365 days (1 year)."""
     with app.app_context():
         resident = Resident.query.filter_by(resident_status=ResidentStatus.ACTIVE).first()
         res_code = resident.resident_code
@@ -231,20 +231,19 @@ def test_verify_30_day_retention_deadline(auth_client, app):
 
     with app.app_context():
         r = db.session.get(Resident, res_id)
-        assert r.retention_deadline == date(2026, 11, 4) + timedelta(days=30)
-        assert r.retention_deadline == date(2026, 12, 4)
+        assert r.retention_deadline == date(2026, 11, 4) + timedelta(days=365)
 
 
 # =========================================================================
 # 7. VERIFY REMAINING RETENTION DAYS
 # =========================================================================
 def test_verify_remaining_retention_days(app):
-    """Verify dynamic remaining retention days and urgency levels."""
+    """Verify dynamic remaining retention days and urgency levels under 1-year policy."""
     today = date.today()
     with app.app_context():
         branch = Branch.query.first()
 
-        # Resident left 10 days ago -> 20 days remaining (safe/normal)
+        # Resident left 10 days ago -> 355 days remaining (safe/normal)
         r_safe = Resident(
             resident_code="RET-SAFE-01",
             full_name="Safe Resident",
@@ -253,28 +252,28 @@ def test_verify_remaining_retention_days(app):
             leaving_date=today - timedelta(days=10),
             resident_status=ResidentStatus.LEFT
         )
-        # Resident left 25 days ago -> 5 days remaining (approaching)
+        # Resident left 360 days ago -> 5 days remaining (approaching)
         r_app = Resident(
             resident_code="RET-APP-01",
             full_name="Approaching Resident",
             branch_id=branch.id,
-            admission_date=today - timedelta(days=50),
-            leaving_date=today - timedelta(days=25),
+            admission_date=today - timedelta(days=400),
+            leaving_date=today - timedelta(days=360),
             resident_status=ResidentStatus.LEFT
         )
-        # Resident left 35 days ago -> -5 days remaining (expired)
+        # Resident left 370 days ago -> -5 days remaining (expired)
         r_exp = Resident(
             resident_code="RET-EXP-01",
             full_name="Expired Resident",
             branch_id=branch.id,
-            admission_date=today - timedelta(days=70),
-            leaving_date=today - timedelta(days=35),
+            admission_date=today - timedelta(days=420),
+            leaving_date=today - timedelta(days=370),
             resident_status=ResidentStatus.LEFT
         )
         db.session.add_all([r_safe, r_app, r_exp])
         db.session.commit()
 
-        assert r_safe.remaining_retention_days == 20
+        assert r_safe.remaining_retention_days == 355
         assert r_safe.retention['urgency'] == 'normal'
         assert not r_safe.is_eligible_for_deletion
 

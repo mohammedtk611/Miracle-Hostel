@@ -48,14 +48,14 @@
     <div class="stat-card-subtext">Currently residing in rooms</div>
   </div>
 
-  <!-- 3. Residents Who Have Left -->
-  <div class="stat-card card-secondary">
+  <!-- 3. Residents Leaving (30-day notice window) -->
+  <div class="stat-card card-warning">
     <div class="stat-card-top">
-      <span class="stat-card-title">Residents Left</span>
-      <div class="stat-card-icon"><i class="bi bi-person-dash"></i></div>
+      <span class="stat-card-title">Residents Leaving</span>
+      <div class="stat-card-icon"><i class="bi bi-box-arrow-right"></i></div>
     </div>
-    <div class="stat-card-value text-muted">{{ stats.left_residents }}</div>
-    <div class="stat-card-subtext">Under 30-day retention</div>
+    <div class="stat-card-value text-warning">{{ stats.leaving_residents }}</div>
+    <div class="stat-card-subtext">Under 30-day notice window</div>
   </div>
 
   <!-- 4. Pending Deposits -->

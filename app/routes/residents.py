@@ -491,6 +491,136 @@ def update_photo(resident_code):
     return redirect(url_for('residents.profile', resident_code=resident.resident_code))
 
 
+@residents_bp.route('/leaving')
+@login_required
+def leaving():
+    """
+    Leaving residents view displaying residents currently in their 30-day notice/retention window.
+    If not retained within 30 days, they automatically transfer to Previous Residents (LEFT).
+    """
+    # 1. Automatically rollover any leaving residents whose 30 days elapsed without retention
+    Resident.check_and_transition_expired_leaving()
+
+    search = request.args.get('search', '').strip()
+    branch_id = request.args.get('branch', 'all')
+    page = request.args.get('page', 1, type=int)
+    per_page = 10
+
+    query = Resident.query.options(db.joinedload(Resident.branch)).filter(
+        Resident.resident_status == ResidentStatus.LEAVING
+    ).join(Branch)
+
+    if search:
+        search_filter = f"%{search}%"
+        query = query.filter(
+            or_(
+                Resident.full_name.ilike(search_filter),
+                Resident.resident_code.ilike(search_filter)
+            )
+        )
+
+    if branch_id and branch_id != 'all':
+        try:
+            b_id = int(branch_id)
+            query = query.filter(Resident.branch_id == b_id)
+        except (ValueError, TypeError):
+            pass
+
+    query = query.order_by(Resident.notice_date.desc(), Resident.id.desc())
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    residents_list = pagination.items
+
+    branches = Branch.query.order_by(Branch.branch_name.asc()).all()
+    active_branches = [b for b in branches if b.is_active]
+
+    return render_template(
+        'residents/leaving.html',
+        residents=residents_list,
+        pagination=pagination,
+        branches=branches,
+        active_branches=active_branches,
+        selected_branch=branch_id,
+        search_query=search,
+        total_count=pagination.total,
+        today=date.today().strftime('%Y-%m-%d')
+    )
+
+
+@residents_bp.route('/<resident_code>/mark-leaving', methods=['POST'])
+@login_required
+def mark_leaving(resident_code):
+    """
+    Mark an active resident as LEAVING.
+    Enters a 30-day timeframe in Leaving Residents section where they can be retained.
+    If not retained within 30 days, they automatically transfer to Previous Residents.
+    """
+    resident = Resident.query.filter_by(resident_code=resident_code).first()
+    if not resident:
+        abort(404)
+
+    if resident.resident_status == ResidentStatus.LEAVING:
+        flash(f"Resident '{resident.full_name}' is already in the Leaving Residents section.", "warning")
+        return redirect(url_for('residents.leaving'))
+
+    notice_date_str = request.form.get('notice_date', '').strip()
+    leaving_date_str = request.form.get('leaving_date', '').strip()
+
+    today = date.today()
+    try:
+        notice_date = datetime.strptime(notice_date_str, '%Y-%m-%d').date() if notice_date_str else today
+    except ValueError:
+        notice_date = today
+
+    try:
+        expected_leaving_date = datetime.strptime(leaving_date_str, '%Y-%m-%d').date() if leaving_date_str else (notice_date + timedelta(days=30))
+    except ValueError:
+        expected_leaving_date = notice_date + timedelta(days=30)
+
+    resident.resident_status = ResidentStatus.LEAVING
+    resident.notice_date = notice_date
+    resident.leaving_date = expected_leaving_date
+    resident.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    AuditService.log(
+        action=AuditAction.RESIDENT_DEPARTURE,
+        entity_type='Resident',
+        entity_id=resident.id,
+        description=f"Marked resident '{resident.full_name}' ({resident.resident_code}) for leaving with 30-day retention timeframe."
+    )
+
+    flash(f"Resident '{resident.full_name}' is now marked for leaving and added to the Leaving Residents section with a 30-day retention window.", "warning")
+    return redirect(url_for('residents.leaving'))
+
+
+@residents_bp.route('/<resident_code>/retain', methods=['POST'], endpoint='retain')
+@residents_bp.route('/<resident_code>/retain-resident', methods=['POST'], endpoint='retain_resident')
+@login_required
+def retain(resident_code):
+    """
+    Retain a resident from LEAVING status, restoring them to ACTIVE status.
+    Cancels leaving notice.
+    """
+    resident = Resident.query.filter_by(resident_code=resident_code).first()
+    if not resident:
+        abort(404)
+
+    resident.resident_status = ResidentStatus.ACTIVE
+    resident.notice_date = None
+    resident.updated_at = datetime.utcnow()
+    db.session.commit()
+
+    AuditService.log(
+        action=AuditAction.RESIDENT_REACTIVATE,
+        entity_type='Resident',
+        entity_id=resident.id,
+        description=f"Retained resident '{resident.full_name}' ({resident.resident_code}) back to ACTIVE status."
+    )
+
+    flash(f"Resident '{resident.full_name}' has been successfully retained and restored to Active Residents!", "success")
+    return redirect(url_for('residents.index'))
+
+
 @residents_bp.route('/previous')
 @login_required
 def previous():
@@ -540,19 +670,19 @@ def previous():
             pass
 
     today = date.today()
-    # Urgency filter based on 30-day retention
+    # Urgency filter based on 1-year retention (365 days)
     if urgency == 'expired':
-        # deadline < today => leaving_date + 30 < today => leaving_date < today - 30 days
-        expired_cutoff = today - timedelta(days=30)
+        # deadline < today => leaving_date + 365 < today => leaving_date < today - 365 days
+        expired_cutoff = today - timedelta(days=365)
         query = query.filter(Resident.leaving_date < expired_cutoff)
     elif urgency == 'approaching':
-        # 0 <= days_remaining <= 7 => today - 30 <= leaving_date <= today - 23
-        cutoff_min = today - timedelta(days=30)
-        cutoff_max = today - timedelta(days=23)
+        # 0 <= days_remaining <= 30 => today - 365 <= leaving_date <= today - 335
+        cutoff_min = today - timedelta(days=365)
+        cutoff_max = today - timedelta(days=335)
         query = query.filter(Resident.leaving_date >= cutoff_min, Resident.leaving_date <= cutoff_max)
     elif urgency in ('normal', 'safe'):
-        # days_remaining > 7 => leaving_date > today - 23 days
-        safe_cutoff = today - timedelta(days=23)
+        # days_remaining > 30 => leaving_date > today - 335 days
+        safe_cutoff = today - timedelta(days=335)
         query = query.filter(Resident.leaving_date > safe_cutoff)
 
     query = query.order_by(Resident.leaving_date.desc(), Resident.id.desc())
@@ -611,13 +741,14 @@ def departure(resident_code):
         flash(f"Departure date ({leaving_date.strftime('%d %b %Y')}) cannot be earlier than admission date ({resident.admission_date.strftime('%d %b %Y')}).", "danger")
         return redirect(url_for('residents.profile', resident_code=resident.resident_code))
 
-    # Calculate 30-day retention deadline
-    retention_deadline = leaving_date + timedelta(days=30)
+    # Calculate 1-year retention deadline (365 days)
+    retention_deadline = leaving_date + timedelta(days=365)
     outstanding_total = resident.total_financial_outstanding
 
     # Update resident status & departure date
     resident.resident_status = ResidentStatus.LEFT
     resident.leaving_date = leaving_date
+    resident.notice_date = None
     resident.updated_at = datetime.utcnow()
 
     # Record or update historical stay record in ResidentStayHistory
@@ -646,11 +777,11 @@ def departure(resident_code):
         action=AuditAction.RESIDENT_DEPARTURE,
         entity_type='Resident',
         entity_id=resident.id,
-        description=f"Resident '{resident.full_name}' ({resident.resident_code}) marked as LEFT on {leaving_date.strftime('%d %b %Y')}. 30-day retention active until {retention_deadline.strftime('%d %b %Y')}{dues_note}."
+        description=f"Resident '{resident.full_name}' ({resident.resident_code}) marked as LEFT on {leaving_date.strftime('%d %b %Y')}. 1-year retention active until {retention_deadline.strftime('%d %b %Y')}{dues_note}."
     )
 
     flash(
-        f"Resident '{resident.full_name}' has been marked as LEFT. Record moved to Previous Residents (Retention active until {retention_deadline.strftime('%d %b %Y')}).",
+        f"Resident '{resident.full_name}' has been marked as departed. Record moved to Previous Residents (1-year retention active until {retention_deadline.strftime('%d %b %Y')}).",
         "success"
     )
     return redirect(url_for('residents.previous'))

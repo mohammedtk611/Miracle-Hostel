@@ -35,6 +35,12 @@
         </a>
       </li>
       <li class="nav-item">
+        <a href="{{ url_for('residents.leaving') }}" class="nav-link-portal {% if request.endpoint == 'residents.leaving' %}active{% endif %}">
+          <i class="bi bi-box-arrow-right"></i>
+          <span class="nav-text">Leaving Residents</span>
+        </a>
+      </li>
+      <li class="nav-item">
         <a href="{{ url_for('residents.add') }}" class="nav-link-portal {% if request.endpoint == 'residents.add' %}active{% endif %}">
           <i class="bi bi-person-plus"></i>
           <span class="nav-text">Add Resident</span>

@@ -629,6 +629,15 @@ img, svg, video, canvas, audio, iframe, embed, object {
     width: auto !important;
     display: inline-flex !important;
   }
+
+  .table-portal-responsive .dropdown-menu {
+    z-index: 999999 !important;
+    position: absolute !important;
+  }
+
+  .table-responsive-portal:has(.dropdown.show) {
+    overflow: visible !important;
+  }
 }
 
 /* Optional card-view fallback utility for custom property lists */

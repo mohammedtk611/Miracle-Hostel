@@ -238,6 +238,10 @@
               <td data-label="Status" class="d-none d-lg-table-cell">
                 {% if r.resident_status == 'ACTIVE' %}
                   <span class="badge-status badge-active">Active</span>
+                {% elif r.resident_status == 'LEAVING' %}
+                  <span class="badge-status" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a; font-weight:600;">
+                    <i class="bi bi-box-arrow-right me-1"></i>Leaving
+                  </span>
                 {% else %}
                   <span class="badge-status badge-left">Left</span>
                 {% endif %}
@@ -246,10 +250,10 @@
               <!-- Actions -->
               <td data-label="Actions" class="text-end">
                 <div class="dropdown">
-                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" data-bs-boundary="body" aria-expanded="false">
                     Actions
                   </button>
-                  <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="z-index: 999999 !important;">
                     <li>
                       <a class="dropdown-item" href="{{ url_for('residents.profile', resident_code=r.resident_code) }}">
                         <i class="bi bi-person-lines-fill me-2 text-primary"></i> View Full Profile
@@ -269,6 +273,18 @@
                     {% if r.resident_status == 'ACTIVE' %}
                       <li>
                         <button type="button" 
+                          class="dropdown-item text-warning-emphasis fw-semibold" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#markLeavingModalDirectory" 
+                          data-resident-code="{{ r.resident_code }}"
+                          data-resident-name="{{ r.full_name }}"
+                          data-branch-name="{{ r.branch_name }}"
+                          onclick="populateMarkLeavingModalDirectory(this)">
+                          <i class="bi bi-box-arrow-right me-2 text-warning"></i> Mark for Leaving
+                        </button>
+                      </li>
+                      <li>
+                        <button type="button" 
                           class="dropdown-item text-danger" 
                           data-bs-toggle="modal" 
                           data-bs-target="#markLeftModalDirectory" 
@@ -281,6 +297,31 @@
                           data-admission-date="{{ r.admission_date }}"
                           onclick="populateMarkLeftModalDirectory(this)">
                           <i class="bi bi-door-open me-2 text-danger"></i> Mark as Left
+                        </button>
+                      </li>
+                    {% elif r.resident_status == 'LEAVING' %}
+                      <li>
+                        <form method="POST" action="{{ url_for('residents.retain_resident', resident_code=r.resident_code) }}">
+                          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                          <button type="submit" class="dropdown-item text-success fw-semibold">
+                            <i class="bi bi-arrow-repeat me-2 text-success"></i> Retain Resident
+                          </button>
+                        </form>
+                      </li>
+                      <li>
+                        <button type="button" 
+                          class="dropdown-item text-danger" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#markLeftModalDirectory" 
+                          data-resident-code="{{ r.resident_code }}"
+                          data-resident-name="{{ r.full_name }}"
+                          data-branch-name="{{ r.branch_name }}"
+                          data-outstanding-rent="{{ r.outstanding_rent }}"
+                          data-outstanding-deposit="{{ r.deposit_outstanding }}"
+                          data-outstanding-total="{{ r.total_financial_outstanding }}"
+                          data-admission-date="{{ r.admission_date }}"
+                          onclick="populateMarkLeftModalDirectory(this)">
+                          <i class="bi bi-door-open me-2 text-danger"></i> Confirm Departure Now
                         </button>
                       </li>
                     {% endif %}
@@ -433,8 +474,8 @@
           </div>
 
           <div class="security-notice mb-3">
-            <strong class="d-block text-dark">30-Day Retention Policy Notice</strong>
-            Status will transition to <strong>LEFT</strong> and record will move to <em>Previous Residents</em>. Information remains accessible throughout the 30-day retention grace period.
+            <strong class="d-block text-dark">1-Year Data Retention Policy Notice</strong>
+            Status will transition to <strong>LEFT</strong> and record will move to <em>Previous Residents</em>. Information remains fully accessible throughout the 1-year (365 days) data retention period.
           </div>
 
           <div class="mb-3">
@@ -451,6 +492,61 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
           <button type="submit" class="btn btn-danger btn-sm">Confirm Departure</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Mark for Leaving Directory Modal -->
+<div class="modal fade" id="markLeavingModalDirectory" tabindex="-1" aria-labelledby="markLeavingModalDirectoryLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="markLeavingModalDirectoryLabel">
+          <i class="bi bi-box-arrow-right text-warning me-2"></i>Mark Resident for Leaving
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="markLeavingFormDirectory" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <p class="text-dark mb-3">
+            Mark <strong id="mldvResidentName">—</strong> (<code id="mldvResidentCode">—</code> &bull; <span id="mldvBranchName">—</span>) for departure.
+          </p>
+
+          <div class="alert alert-warning border border-warning-subtle small mb-3">
+            <strong class="d-block mb-1"><i class="bi bi-clock-history me-1"></i> 30-Day Leaving Window Policy</strong>
+            The resident will be moved to the <strong>Leaving Residents</strong> section with an active 30-day notice window. You can retain them at any time during this period. If un-retained after 30 days, they automatically move to <strong>Previous Residents</strong> (retained for 1 year).
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Scheduled / Notice Departure Date</label>
+            <input type="date" class="form-control" id="mldvLeavingDate" name="leaving_date" value="{{ today }}">
+            <div class="form-text">Notice departure window date (defaults to 30 days from today).</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Reason for Leaving</label>
+            <select class="form-select" name="leaving_reason">
+              <option value="Notice Given (Moving Out)">Notice Given (Moving Out)</option>
+              <option value="Job Relocation / Transfer">Job Relocation / Transfer</option>
+              <option value="Completed College / Studies">Completed College / Studies</option>
+              <option value="Personal / Family Reasons">Personal / Family Reasons</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Additional Remarks / Handover Notes</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="e.g. 1-month notice period given, vacating by month end"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-warning btn-sm text-dark fw-semibold">
+            <i class="bi bi-box-arrow-right me-1"></i> Confirm & Mark for Leaving
+          </button>
         </div>
       </form>
     </div>
@@ -882,6 +978,27 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
+
+function populateMarkLeavingModalDirectory(button) {
+  const code = button.getAttribute('data-resident-code');
+  const name = button.getAttribute('data-resident-name');
+  const branch = button.getAttribute('data-branch-name');
+
+  document.getElementById('mldvResidentName').textContent = name;
+  document.getElementById('mldvResidentCode').textContent = code;
+  document.getElementById('mldvBranchName').textContent = branch;
+
+  // Set default leaving date to 30 days from now
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  const dateStr = d.toISOString().split('T')[0];
+  const dateInput = document.getElementById('mldvLeavingDate');
+  if (dateInput) {
+    dateInput.value = dateStr;
+  }
+
+  document.getElementById('markLeavingFormDirectory').setAttribute('action', `/residents/${code}/mark-leaving`);
+}
 
 function populateMarkLeftModalDirectory(button) {
   const code = button.getAttribute('data-resident-code');

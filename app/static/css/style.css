@@ -526,3 +526,37 @@ button.badge-status:focus-visible {
   color: var(--color-text-muted);
 }
 
+/* Max Z-Index for Action Menus in Data Tables */
+.table-portal .dropdown,
+.table-portal-responsive .dropdown {
+  position: relative;
+}
+
+.table-portal .dropdown-menu,
+.table-portal-responsive .dropdown-menu,
+.dropdown-menu.portal-actions-menu {
+  z-index: 999999 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+}
+
+.table-portal tr:has(.dropdown.show),
+.table-portal-responsive tr:has(.dropdown.show),
+.table-portal tr:has(.dropdown-menu.show),
+.table-portal-responsive tr:has(.dropdown-menu.show) {
+  position: relative !important;
+  z-index: 99999 !important;
+}
+
+.table-portal td:has(.dropdown.show),
+.table-portal-responsive td:has(.dropdown.show),
+.table-portal td:has(.dropdown-menu.show),
+.table-portal-responsive td:has(.dropdown-menu.show) {
+  position: relative !important;
+  z-index: 99999 !important;
+}
+
+.table-responsive-portal:has(.dropdown.show) {
+  overflow: visible !important;
+}
+
+

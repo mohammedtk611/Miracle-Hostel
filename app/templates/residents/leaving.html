@@ -1,0 +1,371 @@
+{% extends 'base.html' %}
+
+{% block title %}Leaving Residents (30-Day Retention Window){% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-row justify-content-between align-items-center mb-3">
+  <div>
+    <div class="d-flex align-items-center gap-2">
+      <h1 class="page-title">Leaving Residents</h1>
+      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">{{ total_count }} Residents in Leaving Window</span>
+    </div>
+    <p class="page-subtitle">Residents scheduled for departure with an active 30-day retention window before moving to Previous Residents</p>
+  </div>
+  <div class="page-actions d-flex gap-2">
+    <a href="{{ url_for('residents.index') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-people me-1"></i> Active Directory
+    </a>
+    <a href="{{ url_for('residents.previous') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-clock-history me-1"></i> Previous Residents (1-Year)
+    </a>
+  </div>
+</div>
+
+<!-- =========================================================================
+     30-DAY LEAVING & RETENTION POLICY BANNER
+     ========================================================================= -->
+<div class="alert alert-warning border border-warning-subtle d-flex align-items-start gap-3 p-3 mb-4 rounded-3 bg-white shadow-sm">
+  <i class="bi bi-clock-history fs-3 text-warning mt-1"></i>
+  <div class="flex-grow-1">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+      <strong class="text-dark">30-Day Leaving & Retention Window Active</strong>
+      <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle font-monospace">Policy: LEAVING_30D</span>
+    </div>
+    <p class="small text-muted mb-0 mt-1">
+      Residents marked for departure remain in this section for a <strong>30-day grace period</strong>. 
+      During these 30 days, you can choose to <strong>Retain Resident</strong> to cancel departure and restore them to Active status. 
+      If not retained within 30 days, their records will automatically transfer to <strong>Previous Residents</strong> (retained for 1 full year).
+    </p>
+  </div>
+</div>
+
+<!-- =========================================================================
+     FILTER & SEARCH TOOLBAR
+     ========================================================================= -->
+<div class="card-portal mb-3">
+  <div class="card-portal-body p-3">
+    <form method="GET" action="{{ url_for('residents.leaving') }}" class="filter-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <!-- Search Input -->
+      <div class="input-group" style="max-width: 320px;">
+        <span class="input-group-text bg-white border-end-0 text-muted">
+          <i class="bi bi-search"></i>
+        </span>
+        <input 
+          type="text" 
+          name="search" 
+          id="tableLiveSearch"
+          class="form-control border-start-0" 
+          placeholder="Search name, resident code..." 
+          value="{{ search_query }}"
+        >
+      </div>
+
+      <!-- Branch Filter -->
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <select name="branch" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="all" {% if selected_branch == 'all' %}selected{% endif %}>All Branches</option>
+          {% for b in branches %}
+            <option value="{{ b.id }}" {% if selected_branch == (b.id|string) %}selected{% endif %}>
+              {{ b.branch_name }}
+            </option>
+          {% endfor %}
+        </select>
+
+        {% if search_query or selected_branch != 'all' %}
+          <a href="{{ url_for('residents.leaving') }}" class="btn btn-sm btn-outline-secondary" title="Reset Filters">
+            <i class="bi bi-x-circle me-1"></i> Reset
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =========================================================================
+     LEAVING RESIDENTS DATA TABLE
+     ========================================================================= -->
+<div class="card-portal mb-4">
+  <div class="card-portal-body p-0">
+    <div class="table-responsive-portal no-scroll-mobile">
+      <table class="table-portal table-portal-responsive">
+        <thead>
+          <tr>
+            <th class="d-none d-md-table-cell">Resident ID</th>
+            <th>Resident</th>
+            <th>Branch</th>
+            <th class="d-none d-md-table-cell">Notice Initiated</th>
+            <th>Expected Departure</th>
+            <th>30-Day Window</th>
+            <th>Dues Balance</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in residents %}
+            <tr>
+              <!-- Resident ID -->
+              <td data-label="Resident ID" class="d-none d-md-table-cell">
+                <span class="font-monospace fw-bold text-dark">{{ r.resident_code }}</span>
+              </td>
+
+              <!-- Resident -->
+              <td data-label="Resident">
+                <div class="d-flex align-items-center gap-2">
+                  <img src="{{ r.photograph_path }}" alt="{{ r.full_name }}" class="avatar-thumb">
+                  <div class="min-w-0">
+                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-bold text-dark text-decoration-none hover-primary text-truncate d-block" style="max-width: 145px;">
+                      {{ r.full_name }}
+                    </a>
+                    <div class="small text-muted text-truncate" style="max-width: 145px;">
+                      <span class="d-md-none font-monospace text-secondary fw-semibold">{{ r.resident_code }} &bull; </span>{{ r.room_number }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Branch -->
+              <td data-label="Branch">
+                <span class="badge bg-light text-dark border">{{ r.branch.branch_name if r.branch else '—' }}</span>
+              </td>
+
+              <!-- Notice Initiated Date -->
+              <td data-label="Notice Date" class="d-none d-md-table-cell">
+                <span>{{ r.notice_date|format_date }}</span>
+              </td>
+
+              <!-- Expected Departure Date -->
+              <td data-label="Departure">
+                <span class="fw-semibold text-dark">{{ r.leaving_date|format_date }}</span>
+              </td>
+
+              <!-- 30-Day Retention Window Countdown -->
+              <td data-label="30d Window">
+                {% if r.leaving_days_remaining <= 5 %}
+                  <span class="badge bg-danger-subtle text-danger border border-danger-subtle fw-semibold">
+                    <i class="bi bi-hourglass-bottom me-1"></i> {{ r.leaving_days_remaining }}d left (Expiring)
+                  </span>
+                {% elif r.leaving_days_remaining <= 15 %}
+                  <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle fw-semibold">
+                    <i class="bi bi-hourglass-split me-1"></i> {{ r.leaving_days_remaining }} days left
+                  </span>
+                {% else %}
+                  <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle fw-semibold">
+                    <i class="bi bi-clock-history me-1"></i> {{ r.leaving_days_remaining }} days left
+                  </span>
+                {% endif %}
+              </td>
+
+              <!-- Dues Balance -->
+              <td data-label="Balance">
+                {% if r.total_financial_outstanding > 0 %}
+                  <span class="badge-status badge-unpaid">Due: {{ r.total_financial_outstanding|currency }}</span>
+                {% else %}
+                  <span class="badge-status badge-paid">Settled</span>
+                {% endif %}
+              </td>
+
+              <!-- Actions (Elevated Z-Index) -->
+              <td data-label="Actions" class="text-end">
+                <div class="dropdown d-inline-block">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" data-bs-boundary="body" aria-expanded="false">
+                    Actions
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm" style="z-index: 999999 !important;">
+                    <li>
+                      <a class="dropdown-item" href="{{ url_for('residents.profile', resident_code=r.resident_code) }}">
+                        <i class="bi bi-person-lines-fill me-2 text-primary"></i> View Full Profile
+                      </a>
+                    </li>
+                    <li>
+                      <!-- Retain Resident (Restores back to Active) -->
+                      <button type="button" 
+                        class="dropdown-item text-success fw-semibold" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#retainResidentModal"
+                        data-resident-code="{{ r.resident_code }}"
+                        data-resident-name="{{ r.full_name }}"
+                        onclick="populateRetainModal(this)">
+                        <i class="bi bi-arrow-repeat me-2 text-success"></i> Retain Resident (Cancel Leaving)
+                      </button>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <!-- Confirm Departure Early (Moves to Previous Residents) -->
+                      <button type="button" 
+                        class="dropdown-item text-danger" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#confirmDepartureModal"
+                        data-resident-code="{{ r.resident_code }}"
+                        data-resident-name="{{ r.full_name }}"
+                        data-branch-name="{{ r.branch.branch_name if r.branch else '' }}"
+                        data-outstanding-rent="{{ r.outstanding_rent }}"
+                        data-outstanding-deposit="{{ r.deposit_outstanding }}"
+                        data-outstanding-total="{{ r.total_financial_outstanding }}"
+                        data-admission-date="{{ r.admission_date }}"
+                        onclick="populateConfirmDepartureModal(this)">
+                        <i class="bi bi-door-open me-2 text-danger"></i> Confirm Departure Now
+                      </button>
+                    </li>
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="8" class="p-0 border-0">
+                <div class="portal-empty-state py-5">
+                  <div class="empty-state-icon-circle">
+                    <i class="bi bi-box-arrow-right"></i>
+                  </div>
+                  <div class="empty-state-title">No Residents Currently in Leaving Window</div>
+                  <div class="empty-state-desc">Residents marked for departure will enter a 30-day retention window here before being transferred to Previous Residents.</div>
+                  <a href="{{ url_for('residents.index') }}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-people me-1"></i> View Active Residents Directory
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-portal-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div class="small text-muted">
+      Showing {{ residents|length }} resident(s) in leaving window
+    </div>
+    <div class="small text-muted">
+      <i class="bi bi-info-circle me-1"></i> Residents un-retained after 30 days automatically move to Previous Residents (1-year retention).
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     MODALS
+     ========================================================================= -->
+
+<!-- Retain Resident Modal -->
+<div class="modal fade" id="retainResidentModal" tabindex="-1" aria-labelledby="retainResidentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="retainResidentModalLabel">
+          <i class="bi bi-arrow-repeat text-success me-2"></i>Retain Resident &bull; Cancel Leaving
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="retainResidentForm" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <p class="text-dark mb-2">
+            Confirm retention for <strong id="retainModalResidentName">Resident</strong>?
+          </p>
+          <div class="alert alert-success p-3 small mb-0">
+            <i class="bi bi-check-circle-fill me-1"></i>
+            This will cancel the leaving notice and restore the resident to <strong>ACTIVE</strong> status in the Active Residents Directory. Their room bed and financial ledger remain active.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success btn-sm">
+            <i class="bi bi-arrow-repeat me-1"></i> Confirm Retention
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Departure Modal -->
+<div class="modal fade" id="confirmDepartureModal" tabindex="-1" aria-labelledby="confirmDepartureModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="confirmDepartureModalLabel">
+          <i class="bi bi-door-open text-danger me-2"></i>Confirm Resident Final Departure
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="confirmDepartureForm" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <p class="text-dark mb-3">
+            Confirm departure transition for <strong id="confirmDepartureResidentName">Resident</strong>.
+          </p>
+
+          <div class="card p-3 mb-3 bg-light border">
+            <h6 class="fw-bold text-dark mb-2 small text-uppercase">Account Financial Summary at Departure</h6>
+            <div class="row g-2 small">
+              <div class="col-6">
+                <span class="text-muted d-block">Outstanding Rent:</span>
+                <strong id="confirmDepartureRentDue" class="text-dark">₹ 0</strong>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block">Deposit Outstanding:</span>
+                <strong id="confirmDepartureDepositDue" class="text-dark">₹ 0</strong>
+              </div>
+            </div>
+            <div id="confirmDepartureAlertDues" class="alert alert-danger p-2 mt-2 mb-0 small d-none">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              <strong>Unsettled Balance: <span id="confirmDepartureTotalDue">₹ 0</span></strong>. Unpaid dues remain recorded for administrative follow-up.
+            </div>
+          </div>
+
+          <div class="security-notice mb-3">
+            <strong class="d-block text-dark">1-Year Retention Policy Notice</strong>
+            The resident record will transition to <strong>LEFT</strong> and transfer to <em>Previous Residents</em>. Profile and financial ledgers remain accessible for 1 full year (365 calendar days).
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">Actual Departure Date</label>
+            <input type="date" class="form-control" name="leaving_date" id="confirmDepartureDate" value="{{ today }}" required>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Handover / Departure Remarks</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="e.g. Keys returned, luggage vacated"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger btn-sm">Confirm Departure & Move to Previous</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function populateRetainModal(btn) {
+  const code = btn.getAttribute('data-resident-code');
+  const name = btn.getAttribute('data-resident-name');
+  document.getElementById('retainModalResidentName').textContent = name + ' (' + code + ')';
+  document.getElementById('retainResidentForm').action = '/residents/' + encodeURIComponent(code) + '/retain';
+}
+
+function populateConfirmDepartureModal(btn) {
+  const code = btn.getAttribute('data-resident-code');
+  const name = btn.getAttribute('data-resident-name');
+  const rentDue = parseFloat(btn.getAttribute('data-outstanding-rent') || '0');
+  const depDue = parseFloat(btn.getAttribute('data-outstanding-deposit') || '0');
+  const totalDue = parseFloat(btn.getAttribute('data-outstanding-total') || '0');
+
+  document.getElementById('confirmDepartureResidentName').textContent = name + ' (' + code + ')';
+  document.getElementById('confirmDepartureRentDue').textContent = '₹ ' + rentDue.toLocaleString('en-IN');
+  document.getElementById('confirmDepartureDepositDue').textContent = '₹ ' + depDue.toLocaleString('en-IN');
+  document.getElementById('confirmDepartureTotalDue').textContent = '₹ ' + totalDue.toLocaleString('en-IN');
+  document.getElementById('confirmDepartureForm').action = '/residents/' + encodeURIComponent(code) + '/departure';
+
+  const alertDues = document.getElementById('confirmDepartureAlertDues');
+  if (totalDue > 0) {
+    alertDues.classList.remove('d-none');
+  } else {
+    alertDues.classList.add('d-none');
+  }
+}
+</script>
+{% endblock %}
+

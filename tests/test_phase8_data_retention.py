@@ -106,7 +106,7 @@ def test_leaving_date_recorded_and_persisted(auth_client, app):
 # 2. RETENTION DEADLINE IS CALCULATED CORRECTLY
 # =========================================================================
 def test_retention_deadline_calculated_correctly(app):
-    """Verify retention deadline is mathematically leaving_date + 30 days."""
+    """Verify retention deadline is mathematically leaving_date + 365 days (1 year)."""
     with app.app_context():
         branch = Branch.query.first()
         leaving_dt = date(2026, 8, 15)
@@ -121,19 +121,19 @@ def test_retention_deadline_calculated_correctly(app):
         db.session.add(res)
         db.session.commit()
 
-        assert res.retention_deadline == leaving_dt + timedelta(days=30)
-        assert res.retention_deadline == date(2026, 9, 14)
+        assert res.retention_deadline == leaving_dt + timedelta(days=365)
+        assert res.retention_deadline == date(2027, 8, 15)
 
 
 # =========================================================================
 # 3. RESIDENTS WITHIN RETENTION PERIOD ARE PRESERVED
 # =========================================================================
 def test_residents_within_retention_period_are_preserved(app):
-    """Residents who left within the 30-day window are NOT deleted."""
+    """Residents who left within the 1-year window are NOT deleted."""
     today = date.today()
     with app.app_context():
         branch = Branch.query.first()
-        # Left 10 days ago (20 days remaining)
+        # Left 10 days ago (355 days remaining)
         res = Resident(
             resident_code="RET-SAFE-010",
             full_name="Preserved Safe Resident",
@@ -147,7 +147,7 @@ def test_residents_within_retention_period_are_preserved(app):
         res_id = res.id
 
         assert not res.is_eligible_for_deletion
-        assert res.remaining_retention_days == 20
+        assert res.remaining_retention_days == 355
 
         # Execute retention cleanup
         result = RetentionService.run_retention_cleanup()
@@ -162,7 +162,7 @@ def test_residents_within_retention_period_are_preserved(app):
 # 4. EXPIRED RESIDENTS ARE IDENTIFIED
 # =========================================================================
 def test_expired_residents_are_identified(app):
-    """Residents whose leaving date is >30 days ago are correctly identified as eligible."""
+    """Residents whose leaving date is >365 days ago are correctly identified as eligible."""
     today = date.today()
     with app.app_context():
         branch = Branch.query.first()
@@ -170,8 +170,8 @@ def test_expired_residents_are_identified(app):
             resident_code="RET-EXP-035",
             full_name="Identified Expired Resident",
             branch_id=branch.id,
-            admission_date=today - timedelta(days=70),
-            leaving_date=today - timedelta(days=35),
+            admission_date=today - timedelta(days=450),
+            leaving_date=today - timedelta(days=380),
             resident_status=ResidentStatus.LEFT
         )
         db.session.add(res_expired)
@@ -282,8 +282,8 @@ def test_associated_photographs_are_deleted_from_storage(app):
             full_name="Photo Deletion Resident",
             branch_id=branch.id,
             photograph_path=f"/residents/photo/{dummy_filename}",
-            admission_date=today - timedelta(days=80),
-            leaving_date=today - timedelta(days=40),
+            admission_date=today - timedelta(days=450),
+            leaving_date=today - timedelta(days=380),
             resident_status=ResidentStatus.LEFT
         )
         db.session.add(res)
@@ -318,8 +318,8 @@ def test_shared_photograph_with_active_resident_is_not_deleted(app):
             full_name="Expired Shared Resident",
             branch_id=branch.id,
             photograph_path=f"/residents/photo/{shared_filename}",
-            admission_date=today - timedelta(days=80),
-            leaving_date=today - timedelta(days=40),
+            admission_date=today - timedelta(days=450),
+            leaving_date=today - timedelta(days=380),
             resident_status=ResidentStatus.LEFT
         )
         # Active resident sharing same photo reference
@@ -361,8 +361,8 @@ def test_eligible_personal_information_is_deleted(app):
             branch_id=branch.id,
             aadhaar_encrypted=enc_aadhaar,
             aadhaar_last_four="1098",
-            admission_date=today - timedelta(days=90),
-            leaving_date=today - timedelta(days=45),
+            admission_date=today - timedelta(days=450),
+            leaving_date=today - timedelta(days=380),
             resident_status=ResidentStatus.LEFT
         )
         db.session.add(res)
@@ -373,8 +373,8 @@ def test_eligible_personal_information_is_deleted(app):
         stay = ResidentStayHistory(
             resident_id=res_id,
             branch_id=branch.id,
-            admission_date=today - timedelta(days=90),
-            leaving_date=today - timedelta(days=45),
+            admission_date=today - timedelta(days=450),
+            leaving_date=today - timedelta(days=380),
             stay_number=1,
             notes="Completed stay cycle"
         )
@@ -406,8 +406,8 @@ def test_required_financial_records_are_preserved_and_anonymized(app):
             resident_code="RET-FIN-001",
             full_name="Financial Ledger Resident",
             branch_id=branch.id,
-            admission_date=today - timedelta(days=90),
-            leaving_date=today - timedelta(days=45),
+            admission_date=today - timedelta(days=450),
+            leaving_date=today - timedelta(days=380),
             resident_status=ResidentStatus.LEFT
         )
         db.session.add(res)
@@ -481,8 +481,8 @@ def test_deletion_logs_are_generated_without_personal_data(app):
             resident_code="RET-LOG-001",
             full_name="Secret Identity Resident",
             branch_id=branch.id,
-            admission_date=today - timedelta(days=90),
-            leaving_date=today - timedelta(days=45),
+            admission_date=today - timedelta(days=450),
+            leaving_date=today - timedelta(days=380),
             resident_status=ResidentStatus.LEFT
         )
         db.session.add(res)
@@ -535,8 +535,8 @@ def test_failed_storage_deletion_rolls_back_and_can_be_retried(app, monkeypatch)
             full_name="Retryable Failure Resident",
             branch_id=branch.id,
             photograph_path="/residents/photo/res_mock_fail.jpg",
-            admission_date=today - timedelta(days=90),
-            leaving_date=today - timedelta(days=45),
+            admission_date=today - timedelta(days=450),
+            leaving_date=today - timedelta(days=380),
             resident_status=ResidentStatus.LEFT
         )
         db.session.add(res)

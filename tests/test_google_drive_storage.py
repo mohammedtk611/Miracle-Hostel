@@ -334,7 +334,7 @@ def test_retention_cleanup_with_google_drive(gdrive_app):
     """Verify that eligible resident data retention permanently purges Google Drive photos and DB record."""
     with gdrive_app.app_context():
         branch = Branch.query.first()
-        past_leave = datetime.utcnow().date() - timedelta(days=35)
+        past_leave = datetime.utcnow().date() - timedelta(days=380)
         resident = Resident(
             resident_code="RES-LEFT-01",
             full_name="Left Resident",
@@ -371,7 +371,7 @@ def test_retention_cleanup_aborts_when_gdrive_delete_fails(gdrive_app):
     """Verify that if Google Drive deletion fails, resident record is NOT purged (safe to retry)."""
     with gdrive_app.app_context():
         branch = Branch.query.first()
-        past_leave = datetime.utcnow().date() - timedelta(days=35)
+        past_leave = datetime.utcnow().date() - timedelta(days=380)
         resident = Resident(
             resident_code="RES-LEFT-RETRY",
             full_name="Left Resident Retry",

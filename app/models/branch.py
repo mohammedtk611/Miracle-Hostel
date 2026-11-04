@@ -55,14 +55,20 @@ class Branch(db.Model):
 
     @property
     def occupied_beds(self) -> int:
-        """Number of currently occupied beds."""
-        return self.active_residents_count
+        """Number of currently occupied beds (active and leaving residents)."""
+        from app.models.resident import Resident, ResidentStatus
+        return self.residents.filter(
+            db.or_(
+                Resident.resident_status == ResidentStatus.ACTIVE,
+                Resident.resident_status == ResidentStatus.LEAVING
+            )
+        ).count()
 
     @property
     def available_beds(self) -> int:
         """Number of free beds available for new resident admissions."""
         capacity = self.total_beds if self.total_beds is not None else 20
-        return max(0, capacity - self.active_residents_count)
+        return max(0, capacity - self.occupied_beds)
 
     @property
     def occupancy_rate(self) -> float:
@@ -70,7 +76,7 @@ class Branch(db.Model):
         capacity = self.total_beds if self.total_beds is not None else 20
         if capacity <= 0:
             return 0.0
-        return round((self.active_residents_count / capacity) * 100, 1)
+        return round((self.occupied_beds / capacity) * 100, 1)
 
     @property
     def total_residents_count(self) -> int:

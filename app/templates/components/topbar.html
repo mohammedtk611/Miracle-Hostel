@@ -9,7 +9,7 @@
     <!-- Global Branch Filter Selector -->
     <div class="branch-selector-container">
       <span class="text-muted small fw-semibold d-none d-md-inline">
-        <i class="bi bi-geo-alt me-1 text-primary"></i>Branch:
+        Branch:
       </span>
       <select class="form-select form-select-sm topbar-branch-select" id="globalBranchSelect" title="Select Branch Filter">
         <option value="all" {% if request.args.get('branch') == 'all' or not request.args.get('branch') %}selected{% endif %}>

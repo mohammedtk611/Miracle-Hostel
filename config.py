@@ -87,8 +87,8 @@ class Config:
     # Password Reset Token Settings
     PASSWORD_RESET_TOKEN_EXPIRE_HOURS = int(os.environ.get('PASSWORD_RESET_TOKEN_EXPIRE_HOURS', 1))
 
-    # Business Rules & Admin Defaults
-    RESIDENT_RETENTION_DAYS = int(os.environ.get('RESIDENT_RETENTION_DAYS', 30))
+    # Business Rules & Admin Defaults: Retain departed residents for 1 year (365 days)
+    RESIDENT_RETENTION_DAYS = int(os.environ.get('RESIDENT_RETENTION_DAYS', 365))
     APP_NAME = "Miracle Hostel"
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
     ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@123')

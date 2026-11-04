@@ -9,8 +9,9 @@ from app.models.payment import Payment
 
 class ResidentStatus:
     ACTIVE = 'ACTIVE'
+    LEAVING = 'LEAVING'
     LEFT = 'LEFT'
-    CHOICES = [ACTIVE, LEFT]
+    CHOICES = [ACTIVE, LEAVING, LEFT]
 
 
 class Resident(db.Model):
@@ -352,23 +353,23 @@ class Resident(db.Model):
 
     @property
     def retention(self) -> dict | None:
-        """Calculate retention metrics and status for departed resident."""
+        """Calculate retention metrics and status for departed resident (1-year retention)."""
         from app.utils.helpers import calculate_retention_info
         if self.resident_status == ResidentStatus.LEFT and self.leaving_date:
-            return calculate_retention_info(self.leaving_date)
+            return calculate_retention_info(self.leaving_date, retention_days=365)
         return None
 
     @property
     def retention_deadline(self) -> date | None:
-        """Calculate the 30-day retention deadline after departure."""
+        """Calculate the 1-year (365-day) retention deadline after departure into Previous Residents."""
         if self.resident_status == ResidentStatus.LEFT and self.leaving_date:
-            return self.leaving_date + timedelta(days=30)
+            return self.leaving_date + timedelta(days=365)
         return None
 
     @property
     def remaining_retention_days(self) -> int | None:
         """
-        Calculate remaining days until permanent deletion eligibility.
+        Calculate remaining days until permanent deletion eligibility under 1-year policy.
         Returns a negative number if deadline has passed.
         """
         if self.retention_deadline:
@@ -376,25 +377,71 @@ class Resident(db.Model):
             return delta.days
         return None
 
+    # -------------------------------------------------------------------------
+    # 30-DAY LEAVING TIMEFRAME PROPERTIES
+    # -------------------------------------------------------------------------
+    @property
+    def leaving_deadline(self) -> date | None:
+        """
+        30-day timeframe for residents in LEAVING status.
+        If not retained within 30 days, resident is moved to Previous Residents.
+        """
+        if self.resident_status == ResidentStatus.LEAVING:
+            start_date = self.notice_date or (self.updated_at.date() if self.updated_at else date.today())
+            return start_date + timedelta(days=30)
+        return None
+
+    @property
+    def leaving_days_remaining(self) -> int:
+        """Days remaining in the 30-day leaving timeframe."""
+        if self.leaving_deadline:
+            return max(0, (self.leaving_deadline - date.today()).days)
+        return 30
+
+    @property
+    def should_auto_move_to_previous(self) -> bool:
+        """True if the 30-day leaving timeframe has elapsed without retention."""
+        if self.resident_status == ResidentStatus.LEAVING and self.leaving_deadline:
+            return date.today() >= self.leaving_deadline
+        return False
+
+    @classmethod
+    def check_and_transition_expired_leaving(cls):
+        """
+        Automatically check leaving residents and transition those who have
+        exceeded the 30-day timeframe without being retained into Previous Residents (LEFT).
+        """
+        today = date.today()
+        leaving_residents = cls.query.filter_by(resident_status=ResidentStatus.LEAVING).all()
+        changed = False
+        for r in leaving_residents:
+            if r.should_auto_move_to_previous:
+                r.resident_status = ResidentStatus.LEFT
+                if not r.leaving_date:
+                    r.leaving_date = r.leaving_deadline or today
+                changed = True
+        if changed:
+            db.session.commit()
+
     @property
     def is_leaving_soon(self) -> bool:
         """
-        True if resident is active but has given notice or is scheduled to leave
-        this month or next month (within notice period).
+        True if resident is in LEAVING status, or active with a scheduled leaving notice.
         """
+        if self.resident_status == ResidentStatus.LEAVING:
+            return True
         if self.resident_status != ResidentStatus.ACTIVE:
             return False
         target_date = self.notice_date or self.leaving_date
         if not target_date:
             return False
         today = date.today()
-        # Scheduled to leave between today and end of next month (~45 days)
         return today <= target_date <= (today + timedelta(days=45))
 
     @property
     def is_eligible_for_deletion(self) -> bool:
-        """True if the resident has left and the 30-day retention period has elapsed."""
-        if self.resident_status == ResidentStatus.LEFT and self.leaving_date:
+        """True if the resident is LEFT and the 1-year retention period (365 days) has elapsed."""
+        if self.resident_status == ResidentStatus.LEFT and self.leaving_date and self.retention_deadline:
             return date.today() >= self.retention_deadline
         return False
 

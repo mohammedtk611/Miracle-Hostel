@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Previous Residents (30-Day Retention Policy){% endblock %}
+{% block title %}Previous Residents (1-Year Retention Policy){% endblock %}
 
 {% block content %}
 <div class="page-header d-flex flex-row justify-content-between align-items-center mb-3">
@@ -9,7 +9,7 @@
       <h1 class="page-title">Previous Residents</h1>
       <span class="badge bg-secondary-subtle text-secondary border">{{ total_count }} Historical Records</span>
     </div>
-    <p class="page-subtitle">Historical records of departed residents subject to automated 30-day data retention</p>
+    <p class="page-subtitle">Historical records of departed residents subject to automated 1-year data retention (365 days)</p>
   </div>
   <div>
     <a href="{{ url_for('residents.index') }}" class="btn btn-outline-secondary btn-sm">
@@ -19,19 +19,19 @@
 </div>
 
 <!-- =========================================================================
-     30-DAY RETENTION POLICY BANNER
+     1-YEAR RETENTION POLICY BANNER
      ========================================================================= -->
 <div class="alert alert-secondary border d-flex align-items-start gap-3 p-3 mb-4 rounded-3 bg-white shadow-sm">
-  <i class="bi bi-shield-exclamation fs-3 text-primary mt-1"></i>
+  <i class="bi bi-shield-check fs-3 text-primary mt-1"></i>
   <div class="flex-grow-1">
     <div class="d-flex align-items-center justify-content-between">
-      <strong class="text-dark">30-Day Data Retention Policy Active</strong>
-      <span class="badge bg-light text-muted border font-monospace">Policy: RETENTION_30D</span>
+      <strong class="text-dark">1-Year Data Retention Policy Active (365 Days)</strong>
+      <span class="badge bg-light text-muted border font-monospace">Policy: RETENTION_365D</span>
     </div>
     <p class="small text-muted mb-0 mt-1">
       When a resident departs, their status transitions to <strong>LEFT</strong> and moves here. 
-      All personal profiles and financial payment records remain fully accessible for <strong>30 calendar days</strong>. 
-      Records exceeding 30 days become eligible for permanent purge. Automatic deletion executes in Phase 3.
+      All personal profiles and financial payment records remain fully accessible for <strong>1 full year (365 calendar days)</strong>. 
+      Records exceeding 365 days become eligible for permanent purge.
     </p>
   </div>
 </div>
@@ -72,9 +72,9 @@
         <!-- Urgency Filter -->
         <select name="urgency" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
           <option value="ALL" {% if selected_urgency == 'ALL' %}selected{% endif %}>All Retention Periods</option>
-          <option value="normal" {% if selected_urgency in ['normal', 'safe'] %}selected{% endif %}>Safe (> 7 Days)</option>
-          <option value="approaching" {% if selected_urgency == 'approaching' %}selected{% endif %}>⚠️ Approaching Deadline (&le; 7 Days)</option>
-          <option value="expired" {% if selected_urgency == 'expired' %}selected{% endif %}>🚨 Eligible for Deletion (&gt; 30 Days)</option>
+          <option value="normal" {% if selected_urgency in ['normal', 'safe'] %}selected{% endif %}>Safe (> 30 Days)</option>
+          <option value="approaching" {% if selected_urgency == 'approaching' %}selected{% endif %}>⚠️ Approaching Deadline (&le; 30 Days)</option>
+          <option value="expired" {% if selected_urgency == 'expired' %}selected{% endif %}>🚨 Eligible for Deletion (&gt; 365 Days)</option>
         </select>
 
         <!-- Leaving Date Range Filter -->
@@ -182,12 +182,12 @@
               <!-- Remaining Retention Period Badge -->
               <td data-label="Retention">
                 {% if r.retention.urgency == 'expired' %}
-                  <span class="badge-status badge-expired" title="30-day retention has passed. Eligible for automated purge.">
+                  <span class="badge-status badge-expired" title="1-year retention (365 days) has passed. Eligible for automated purge.">
                     <i class="bi bi-exclamation-octagon-fill"></i> Eligible for Deletion
                   </span>
                   <div class="small text-danger mt-1 fw-semibold">Retention Expired ({{ r.retention.days_remaining|abs }}d ago)</div>
                 {% elif r.retention.urgency == 'approaching' %}
-                  <span class="badge-status badge-approaching" title="Approaching 30-day threshold">
+                  <span class="badge-status badge-approaching" title="Approaching 1-year threshold">
                     <i class="bi bi-exclamation-triangle-fill"></i> {{ r.retention.days_remaining }}d Left (Approaching)
                   </span>
                 {% else %}
@@ -226,7 +226,7 @@
                     <i class="bi bi-clock-history"></i>
                   </div>
                   <div class="empty-state-title">No Departed Residents</div>
-                  <div class="empty-state-desc">When an active resident departs, they are listed here under the automated 30-day retention and reactivation window.</div>
+                  <div class="empty-state-desc">When an active resident departs, they are listed here under the automated 1-year retention policy (365 days).</div>
                   <a href="{{ url_for('residents.index') }}" class="btn btn-outline-primary btn-sm">
                     <i class="bi bi-people me-1"></i> View Active Residents Directory
                   </a>
@@ -244,7 +244,7 @@
       Showing {{ residents|length }} previous resident record(s)
     </div>
     <div class="small text-muted">
-      <i class="bi bi-info-circle me-1"></i> Full profile and ledger access is strictly maintained throughout the 30-day grace window.
+      <i class="bi bi-info-circle me-1"></i> Full profile and ledger access is strictly maintained throughout the 1-year data retention window.
     </div>
   </div>
 </div>

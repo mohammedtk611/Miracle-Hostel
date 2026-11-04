@@ -35,6 +35,9 @@ class DashboardService:
             except (ValueError, TypeError):
                 pass
 
+        # Auto-check leaving residents whose 30-day timeframe has elapsed
+        Resident.check_and_transition_expired_leaving()
+
         # 1. Resident Counts
         res_query = Resident.query
         if target_branch_id:
@@ -42,6 +45,7 @@ class DashboardService:
 
         total_residents = res_query.count()
         active_residents = res_query.filter(Resident.resident_status == ResidentStatus.ACTIVE).count()
+        leaving_residents = res_query.filter(Resident.resident_status == ResidentStatus.LEAVING).count()
         left_residents = res_query.filter(Resident.resident_status == ResidentStatus.LEFT).count()
 
         # 2. Financial Metrics via SQL Aggregation
@@ -86,6 +90,7 @@ class DashboardService:
             'branch_id': target_branch_id,
             'total_residents': total_residents,
             'active_residents': active_residents,
+            'leaving_residents': leaving_residents,
             'left_residents': left_residents,
             'pending_deposits_count': int(pending_dep_count or 0),
             'pending_deposits_amount': float(pending_dep_amount or 0.0),
@@ -203,13 +208,15 @@ class DashboardService:
 
         distribution = []
         for b in branches:
-            active_residents = b.residents.filter_by(resident_status=ResidentStatus.ACTIVE).all()
+            current_residents = b.residents.filter(
+                Resident.resident_status.in_([ResidentStatus.ACTIVE, ResidentStatus.LEAVING])
+            ).all()
             total_beds = b.total_beds if (b.total_beds and b.total_beds > 0) else 20
-            occupied_count = len(active_residents)
+            occupied_count = len(current_residents)
             available_beds = max(0, total_beds - occupied_count)
 
-            # Segregate staying vs leaving soon (notice period)
-            leaving_count = sum(1 for r in active_residents if r.is_leaving_soon)
+            # Segregate staying vs leaving soon (LEAVING status or notice period)
+            leaving_count = sum(1 for r in current_residents if r.resident_status == ResidentStatus.LEAVING or r.is_leaving_soon)
             staying_count = max(0, occupied_count - leaving_count)
 
             staying_pct = round((staying_count / total_beds * 100), 1) if total_beds > 0 else 0.0

@@ -32,9 +32,9 @@ def format_date(dt_value, fmt="%d %b %Y") -> str:
     return str(dt_value)
 
 
-def calculate_retention_info(leaving_date, retention_days=30) -> dict:
+def calculate_retention_info(leaving_date, retention_days=365) -> dict:
     """
-    Calculate retention status metrics for left residents:
+    Calculate retention status metrics for left residents (default: 365 days / 1 year):
     - retention_deadline
     - days_remaining
     - urgency_level ('normal', 'approaching', 'expired')
@@ -74,13 +74,13 @@ def calculate_retention_info(leaving_date, retention_days=30) -> dict:
             'badge_class': 'badge-danger',
             'label': f'Eligible for Deletion ({abs(days_remaining)}d overdue)'
         }
-    elif days_remaining <= 7:
+    elif days_remaining <= 30:
         return {
             'deadline': deadline,
             'days_remaining': days_remaining,
             'urgency': 'approaching',
             'badge_class': 'badge-warning',
-            'label': f'Approaching Deadline ({days_remaining}d left)'
+            'label': f'Approaching 1-Year Deadline ({days_remaining}d left)'
         }
     else:
         return {
