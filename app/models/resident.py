@@ -42,6 +42,7 @@ class Resident(db.Model):
 
     admission_date = db.Column(db.Date, nullable=False, index=True)
     leaving_date = db.Column(db.Date, nullable=True, index=True)
+    notice_date = db.Column(db.Date, nullable=True, index=True)
     resident_status = db.Column(
         db.String(20),
         default=ResidentStatus.ACTIVE,
@@ -374,6 +375,21 @@ class Resident(db.Model):
             delta = self.retention_deadline - date.today()
             return delta.days
         return None
+
+    @property
+    def is_leaving_soon(self) -> bool:
+        """
+        True if resident is active but has given notice or is scheduled to leave
+        this month or next month (within notice period).
+        """
+        if self.resident_status != ResidentStatus.ACTIVE:
+            return False
+        target_date = self.notice_date or self.leaving_date
+        if not target_date:
+            return False
+        today = date.today()
+        # Scheduled to leave between today and end of next month (~45 days)
+        return today <= target_date <= (today + timedelta(days=45))
 
     @property
     def is_eligible_for_deletion(self) -> bool:

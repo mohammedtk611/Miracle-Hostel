@@ -46,11 +46,18 @@ def index():
                 return redirect(url_for('branches.index'))
 
             # Create and save in PostgreSQL
+            total_beds_raw = request.form.get('total_beds', '20').strip()
+            try:
+                total_beds = max(1, int(total_beds_raw))
+            except (ValueError, TypeError):
+                total_beds = 20
+
             new_branch = Branch(
                 branch_name=branch_name,
                 branch_code=branch_code,
                 address=address,
                 contact_number=contact_number,
+                total_beds=total_beds,
                 is_active=True
             )
             db.session.add(new_branch)
@@ -102,6 +109,12 @@ def index():
             branch.branch_code = branch_code
             branch.address = address
             branch.contact_number = contact_number
+            total_beds_raw = request.form.get('total_beds', '').strip()
+            if total_beds_raw:
+                try:
+                    branch.total_beds = max(1, int(total_beds_raw))
+                except (ValueError, TypeError):
+                    pass
             branch.updated_at = datetime.utcnow()
             db.session.commit()
 
@@ -201,6 +214,9 @@ def index():
     active_count = Branch.query.filter_by(is_active=True).count()
     inactive_count = Branch.query.filter_by(is_active=False).count()
     total_capacity = Resident.query.count()
+    total_system_beds = db.session.query(func.coalesce(func.sum(Branch.total_beds), 0)).filter(Branch.is_active.is_(True)).scalar() or 0
+    total_occupied_beds = Resident.query.filter_by(resident_status=ResidentStatus.ACTIVE).count()
+    total_available_beds = max(0, total_system_beds - total_occupied_beds)
 
     return render_template(
         'branches/index.html',
@@ -208,6 +224,8 @@ def index():
         active_count=active_count,
         inactive_count=inactive_count,
         total_capacity=total_capacity,
+        total_system_beds=total_system_beds,
+        total_available_beds=total_available_beds,
         search_query=search_query,
         selected_status=selected_status
     )

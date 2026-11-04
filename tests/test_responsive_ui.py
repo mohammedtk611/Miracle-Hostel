@@ -114,6 +114,7 @@ def test_dashboard_responsive_kpis_and_recent_admissions(auth_client):
     assert 'data-label="Resident"' in html
     assert 'data-label="Branch"' in html
     assert 'data-label="Admission"' in html
+    assert 'd-none d-md-table-cell' in html
     assert 'data-label="Deposit"' in html
     assert 'data-label="Action"' in html
 
@@ -129,6 +130,7 @@ def test_resident_directory_responsive_table_and_labels(auth_client):
     assert 'data-label="Resident"' in html
     assert 'data-label="Branch"' in html
     assert 'data-label="Admission"' in html
+    assert 'd-none d-md-table-cell' in html
     assert 'data-label="Deposit"' in html
     assert 'data-label="Rent"' in html
     assert 'data-label="Status"' in html

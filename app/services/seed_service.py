@@ -26,6 +26,7 @@ def seed_database_sample_data(force=False):
         branch_code="BR-AN-01",
         address="14, 2nd Avenue, Anna Nagar East, Chennai 600102",
         contact_number="+91 98401 23456",
+        total_beds=10,
         is_active=True
     )
     branch2 = Branch(
@@ -33,6 +34,7 @@ def seed_database_sample_data(force=False):
         branch_code="BR-OMR-02",
         address="Plot 88, Rajiv Gandhi Salai, Thoraipakkam, Chennai 600097",
         contact_number="+91 98402 34567",
+        total_beds=12,
         is_active=True
     )
     branch3 = Branch(
@@ -40,6 +42,7 @@ def seed_database_sample_data(force=False):
         branch_code="BR-GD-03",
         address="7, Industrial Estate Main Rd, Guindy, Chennai 600032",
         contact_number="+91 98403 45678",
+        total_beds=8,
         is_active=True
     )
     branch4 = Branch(
@@ -47,6 +50,7 @@ def seed_database_sample_data(force=False):
         branch_code="BR-PR-04",
         address="22, Mount-Poonamallee High Rd, Porur, Chennai 600116",
         contact_number="+91 98404 56789",
+        total_beds=15,
         is_active=False  # Deactivated branch with historical records
     )
 
@@ -84,6 +88,7 @@ def seed_database_sample_data(force=False):
         aadhaar_last_four=last2,
         admission_date=today - timedelta(days=120),
         leaving_date=None,
+        notice_date=today + timedelta(days=25),
         resident_status=ResidentStatus.ACTIVE
     )
 

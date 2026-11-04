@@ -338,3 +338,61 @@ def test_branch_directory_search_and_filters(auth_client):
     table_inactive = res_inactive.data.split(b'<tbody>')[1].split(b'</tbody>')[0]
     assert b"BR-PR-04" in table_inactive
     assert b"BR-AN-01" not in table_inactive  # Active branch filtered out of table
+
+
+# -----------------------------------------------------------------------------
+# 9. TOTAL BEDS AVAILABLE & REAL-TIME OCCUPANCY (GREEN/YELLOW) TESTS
+# -----------------------------------------------------------------------------
+def test_branch_total_beds_and_availability(auth_client, app):
+    """Verify total beds configuration and real-time available beds calculation."""
+    res = auth_client.post('/branches', data={
+        'action': 'add',
+        'branch_name': 'Horizon Residency',
+        'branch_code': 'BR-HR-07',
+        'address': '99 Beach Rd, Chennai 600041',
+        'contact_number': '+91 98409 99887',
+        'total_beds': '25'
+    }, follow_redirects=True)
+    assert res.status_code == 200
+
+    with app.app_context():
+        b = Branch.query.filter_by(branch_code='BR-HR-07').first()
+        assert b is not None
+        assert b.total_beds == 25
+        assert b.occupied_beds == 0
+        assert b.available_beds == 25
+        assert b.occupancy_rate == 0.0
+
+
+def test_branch_distribution_real_time_occupancy_and_notice_period(auth_client, app):
+    """
+    Verify real-time bed distribution calculation with:
+    - Green segment for staying residents.
+    - Yellow segment for residents with notice period leaving next month.
+    """
+    with app.app_context():
+        distribution = DashboardService.get_branch_distribution()
+        assert len(distribution) > 0
+
+        # Branch 1 in seed data has 2 active residents, one of which has notice_date in next month
+        b1_dist = next((item for item in distribution if item['branch_code'] == 'BR-AN-01'), None)
+        assert b1_dist is not None
+        assert b1_dist['total_beds'] == 10
+        assert b1_dist['occupied_count'] == 2
+        assert b1_dist['available_beds'] == 8
+        assert b1_dist['staying_count'] == 1
+        assert b1_dist['leaving_count'] == 1
+        assert b1_dist['staying_pct'] == 10.0
+        assert b1_dist['leaving_pct'] == 10.0
+        assert b1_dist['occupancy_pct'] == 20.0
+
+    # Also verify dashboard HTML contains the real-time elements synced to Image 3
+    dash_res = auth_client.get('/dashboard')
+    assert dash_res.status_code == 200
+    html = dash_res.data.decode('utf-8')
+    assert 'Real-Time Bed Occupancy' in html
+    assert 'bg-success' in html
+    assert 'bg-warning' in html
+    assert 'Free' in html
+    assert 'd-none d-md-table-cell' in html  # Admission Date hidden on mobile
+

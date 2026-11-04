@@ -112,7 +112,7 @@
               <tr>
                 <th>Resident</th>
                 <th>Branch</th>
-                <th>Admission Date</th>
+                <th class="d-none d-md-table-cell">Admission Date</th>
                 <th>Room / Bed</th>
                 <th>Deposit Status</th>
                 <th class="text-end">Action</th>
@@ -133,7 +133,7 @@
                   <td data-label="Branch">
                     <span class="badge bg-light text-dark border">{{ res.branch_code }}</span>
                   </td>
-                  <td data-label="Admission">{{ res.admission_date|format_date }}</td>
+                  <td data-label="Admission" class="d-none d-md-table-cell">{{ res.admission_date|format_date }}</td>
                   <td data-label="Room / Bed">{{ res.room_number }}</td>
                   <td data-label="Deposit">
                     {% if res.deposit_status == 'PAID' %}
@@ -145,7 +145,7 @@
                     {% endif %}
                   </td>
                   <td data-label="Action" class="text-end">
-                    <a href="{{ url_for('residents.profile', resident_code=res.resident_code) }}" class="btn btn-sm btn-outline-primary py-1 px-2">
+                    <a href="{{ url_for('residents.profile', resident_code=res.resident_code) }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="View Full Profile (includes Admission Date, Room & Stay details)">
                       <i class="bi bi-eye"></i> View
                     </a>
                   </td>
@@ -164,7 +164,7 @@
     </div>
   </div>
 
-  <!-- Branch-wise Resident Distribution -->
+  <!-- Branch-wise Resident Distribution & Real-Time Bed Occupancy -->
   <div class="col-lg-4">
     <div class="card-portal h-100">
       <div class="card-portal-header">
@@ -172,32 +172,64 @@
           <i class="bi bi-pie-chart text-primary"></i>
           <h2 class="h6 mb-0 fw-bold">Branch Distribution</h2>
         </div>
-        <span class="badge bg-light text-muted border">Active Capacity</span>
+        <span class="badge bg-light text-muted border">Real-Time Bed Occupancy</span>
       </div>
       <div class="card-portal-body">
         <div class="d-flex flex-column gap-3">
           {% for b in branch_distribution %}
             <div class="branch-distribution-item">
-              <div class="branch-distribution-header">
+              <div class="branch-distribution-header d-flex justify-content-between align-items-center mb-1">
                 <div>
-                  <span class="branch-distribution-name">{{ b.branch_name }}</span>
+                  <span class="branch-distribution-name fw-bold text-dark">{{ b.branch_name }}</span>
                   {% if not b.is_active %}
                     <span class="badge bg-secondary-subtle text-secondary ms-1 small">Deactivated</span>
                   {% endif %}
                 </div>
-                <span class="branch-distribution-count">
-                  {{ b.active_count }} / {{ b.total_count }} Residents
+                <span class="branch-distribution-count small fw-bold text-dark">
+                  {{ b.occupied_count }} / {{ b.total_beds }} Beds
                 </span>
               </div>
-              <div class="distribution-progress">
+
+              <!-- Multi-Segment Real-Time Progress Bar: Green (Staying), Yellow (Notice Period / Leaving Soon) -->
+              <div class="progress" style="height: 9px; border-radius: 5px; background-color: #E2E8F0; overflow: hidden; display: flex;" title="{{ b.occupied_count }} of {{ b.total_beds }} beds occupied">
+                <!-- Green: Residents Staying -->
                 <div 
-                  class="distribution-progress-bar {% if not b.is_active %}bg-secondary{% endif %}" 
-                  style="width: {{ b.percentage }}%;"
+                  class="progress-bar bg-success" 
+                  role="progressbar" 
+                  style="width: {{ b.staying_pct }}%;" 
+                  title="{{ b.staying_count }} resident(s) staying"
+                  aria-valuenow="{{ b.staying_pct }}" 
+                  aria-valuemin="0" 
+                  aria-valuemax="100"
+                ></div>
+                <!-- Yellow: Residents Leaving This / Next Month (Notice Period) -->
+                <div 
+                  class="progress-bar bg-warning" 
+                  role="progressbar" 
+                  style="width: {{ b.leaving_pct }}%;" 
+                  title="{{ b.leaving_count }} resident(s) leaving (notice period)"
+                  aria-valuenow="{{ b.leaving_pct }}" 
+                  aria-valuemin="0" 
+                  aria-valuemax="100"
                 ></div>
               </div>
-              <div class="d-flex justify-content-between mt-1">
-                <span class="small text-muted">{{ b.branch_code }}</span>
-                <span class="small text-muted fw-semibold">{{ b.percentage }}% occupancy</span>
+
+              <!-- Occupancy Breakdown Legend & Available Beds -->
+              <div class="d-flex justify-content-between align-items-center mt-1 small">
+                <span class="text-muted font-monospace">{{ b.branch_code }} &bull; {{ b.occupancy_pct }}% Occupancy</span>
+                <div class="d-flex align-items-center gap-1">
+                  <span class="badge bg-success-subtle text-success border border-success-subtle" title="Residents staying">
+                    <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i>{{ b.staying_count }} Stay
+                  </span>
+                  {% if b.leaving_count > 0 %}
+                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle" title="Residents leaving this or next month">
+                      <i class="bi bi-circle-fill me-1" style="font-size: 0.4rem;"></i>{{ b.leaving_count }} Notice
+                    </span>
+                  {% endif %}
+                  <span class="badge bg-light text-dark border" title="Vacant beds available">
+                    {{ b.available_beds }} Free
+                  </span>
+                </div>
               </div>
             </div>
           {% endfor %}

@@ -110,4 +110,15 @@ class MigrationService:
                 if 'admission_rent_due' not in resident_cols:
                     conn.execute(text("ALTER TABLE residents ADD COLUMN admission_rent_due NUMERIC(10, 2) DEFAULT 8500.00"))
                     conn.commit()
+                if 'notice_date' not in resident_cols:
+                    conn.execute(text("ALTER TABLE residents ADD COLUMN notice_date DATE"))
+                    conn.commit()
+
+        # 4. Check and add missing columns to branches
+        if 'branches' in inspector.get_table_names():
+            branch_cols = {c['name'] for c in inspector.get_columns('branches')}
+            with engine.connect() as conn:
+                if 'total_beds' not in branch_cols:
+                    conn.execute(text("ALTER TABLE branches ADD COLUMN total_beds INTEGER DEFAULT 20 NOT NULL"))
+                    conn.commit()
 

@@ -191,23 +191,47 @@ class DashboardService:
 
     @classmethod
     def get_branch_distribution(cls) -> list[dict]:
-        """Compute resident occupancy distribution across all branches."""
+        """
+        Compute real-time bed capacity and occupancy distribution across all branches:
+        - Total beds available per branch.
+        - Green segment: residents staying.
+        - Yellow segment: residents scheduled to leave this or next month (notice period).
+        - Free beds available for admissions.
+        """
         branches = Branch.query.order_by(Branch.branch_name.asc()).all()
-        total_active = Resident.query.filter_by(resident_status=ResidentStatus.ACTIVE).count()
+        total_active_system = Resident.query.filter_by(resident_status=ResidentStatus.ACTIVE).count()
 
         distribution = []
         for b in branches:
-            active_cnt = b.active_residents_count
-            total_cnt = b.total_residents_count
-            pct = round((active_cnt / total_active * 100), 1) if total_active > 0 else 0.0
+            active_residents = b.residents.filter_by(resident_status=ResidentStatus.ACTIVE).all()
+            total_beds = b.total_beds if (b.total_beds and b.total_beds > 0) else 20
+            occupied_count = len(active_residents)
+            available_beds = max(0, total_beds - occupied_count)
+
+            # Segregate staying vs leaving soon (notice period)
+            leaving_count = sum(1 for r in active_residents if r.is_leaving_soon)
+            staying_count = max(0, occupied_count - leaving_count)
+
+            staying_pct = round((staying_count / total_beds * 100), 1) if total_beds > 0 else 0.0
+            leaving_pct = round((leaving_count / total_beds * 100), 1) if total_beds > 0 else 0.0
+            occupancy_pct = round((occupied_count / total_beds * 100), 1) if total_beds > 0 else 0.0
+
             distribution.append({
                 'id': b.id,
                 'branch_name': b.branch_name,
                 'branch_code': b.branch_code,
                 'is_active': b.is_active,
-                'active_count': active_cnt,
-                'total_count': total_cnt,
-                'percentage': pct
+                'total_beds': total_beds,
+                'occupied_count': occupied_count,
+                'active_count': occupied_count,
+                'available_beds': available_beds,
+                'staying_count': staying_count,
+                'leaving_count': leaving_count,
+                'staying_pct': staying_pct,
+                'leaving_pct': leaving_pct,
+                'total_count': b.total_residents_count,
+                'occupancy_pct': occupancy_pct,
+                'percentage': occupancy_pct
             })
         return distribution
 

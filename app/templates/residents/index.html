@@ -89,38 +89,38 @@
      ========================================================================= -->
 <div class="card-portal">
   <div class="card-portal-body p-0">
-    <div class="table-responsive-portal">
+    <div class="table-responsive-portal no-scroll-mobile">
       <table class="table-portal table-portal-responsive">
         <thead>
           <tr>
-            <th>Resident ID</th>
-            <th>Resident Photo & Name</th>
+            <th class="d-none d-md-table-cell">Resident ID</th>
+            <th>Resident</th>
             <th>Branch</th>
-            <th>Admission Date</th>
+            <th class="d-none d-md-table-cell">Admission Date</th>
             <th>Deposit Status</th>
             <th>Rent Status</th>
-            <th>Resident Status</th>
+            <th class="d-none d-lg-table-cell">Resident Status</th>
             <th class="text-end">Actions</th>
           </tr>
         </thead>
         <tbody>
           {% for r in residents %}
             <tr>
-              <!-- Resident ID -->
-              <td data-label="Resident ID">
+              <!-- Resident ID (Hidden on mobile; combined into Resident column) -->
+              <td data-label="Resident ID" class="d-none d-md-table-cell">
                 <span class="font-monospace fw-bold text-dark">{{ r.resident_code }}</span>
               </td>
 
-              <!-- Photograph & Name -->
+              <!-- Photograph & Name (With code on mobile) -->
               <td data-label="Resident">
                 <div class="d-flex align-items-center gap-2">
                   <img src="{{ r.photograph_path }}" alt="{{ r.full_name }}" class="avatar-thumb">
-                  <div>
-                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-semibold text-dark text-decoration-none hover-primary">
+                  <div class="min-w-0">
+                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-bold text-dark text-decoration-none hover-primary text-truncate d-block" style="max-width: 145px;">
                       {{ r.full_name }}
                     </a>
-                    <div class="small text-muted">
-                      {{ r.room_number }}
+                    <div class="small text-muted text-truncate" style="max-width: 145px;">
+                      <span class="d-md-none font-monospace text-secondary fw-semibold">{{ r.resident_code }} &bull; </span>{{ r.room_number }}
                     </div>
                   </div>
                 </div>
@@ -131,8 +131,8 @@
                 <span class="badge bg-light text-dark border">{{ r.branch_name }}</span>
               </td>
 
-              <!-- Admission Date -->
-              <td data-label="Admission">
+              <!-- Admission Date (Hidden on mobile, viewable via Profile Action) -->
+              <td data-label="Admission" class="d-none d-md-table-cell">
                 <span>{{ r.admission_date|format_date }}</span>
               </td>
 
@@ -235,7 +235,7 @@
               </td>
 
               <!-- Resident Status -->
-              <td data-label="Status">
+              <td data-label="Status" class="d-none d-lg-table-cell">
                 {% if r.resident_status == 'ACTIVE' %}
                   <span class="badge-status badge-active">Active</span>
                 {% else %}

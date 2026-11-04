@@ -48,12 +48,17 @@ function initBranchModals() {
       const branchCode = button.getAttribute('data-branch-code');
       const branchAddress = button.getAttribute('data-branch-address');
       const branchContact = button.getAttribute('data-branch-contact');
+      const branchBeds = button.getAttribute('data-branch-beds');
 
       document.getElementById('edit_branch_id').value = branchId || '';
       document.getElementById('edit_branch_name').value = branchName || '';
       document.getElementById('edit_branch_code').value = branchCode || '';
       document.getElementById('edit_branch_address').value = branchAddress || '';
       document.getElementById('edit_branch_contact').value = branchContact || '';
+      const bedsInput = document.getElementById('edit_total_beds');
+      if (bedsInput) {
+        bedsInput.value = branchBeds || '20';
+      }
     });
   }
 
