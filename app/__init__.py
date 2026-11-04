@@ -123,3 +123,12 @@ def create_app(config_name=None):
     register_cli_commands(app)
 
     return app
+
+
+if __name__ == '__main__':
+    import sys
+    _root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    if _root not in sys.path:
+        sys.path.insert(0, _root)
+    from run import run_server
+    run_server()

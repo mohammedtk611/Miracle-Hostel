@@ -4,7 +4,14 @@ Includes secure CLI commands for database initialization, migrations, and admini
 """
 import os
 import sys
+import socket
 import click
+
+# Ensure project root directory is always on python sys.path
+PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from app import create_app
 from app.extensions import db
 from app.models import Admin, Branch
@@ -14,6 +21,30 @@ from app.services.seed_service import seed_database_sample_data
 from app.services.migration_service import MigrationService
 
 app = create_app(os.environ.get('FLASK_ENV', 'development'))
+
+
+def get_local_ip():
+    """Retrieve primary local LAN IP address for multi-device testing (e.g. mobile on Wi-Fi)."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+            s.connect(("8.8.8.8", 80))
+            return s.getsockname()[0]
+    except Exception:
+        return '127.0.0.1'
+
+
+def find_available_port(start_port=5000, host='0.0.0.0'):
+    """Check if the designated port is free; if not, find the next available port."""
+    port = start_port
+    while port < start_port + 25:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            try:
+                s.bind((host, port))
+                return port
+            except OSError:
+                port += 1
+    return start_port
 
 
 def seed_or_create_admin(email=None, username=None, password=None):
@@ -72,6 +103,39 @@ def seed_or_create_admin(email=None, username=None, password=None):
                 description=f"Initial administrator account created via secure CLI for {email}."
             )
             return new_admin
+
+
+def run_server():
+    """Development and production server runner with automatic schema check and multi-device access."""
+    is_prod = app.config.get('ENV') == 'production' or os.environ.get('FLASK_ENV') == 'production'
+
+    with app.app_context():
+        db.create_all()
+        MigrationService.migrate_schema()
+        if not is_prod:
+            if not Admin.query.first():
+                seed_or_create_admin()
+            if not Branch.query.first():
+                seed_database_sample_data()
+
+    requested_port = int(os.environ.get('PORT', 5000))
+    host = '0.0.0.0'
+    port = find_available_port(requested_port, host=host) if not is_prod else requested_port
+    debug = (not is_prod) and os.environ.get('FLASK_DEBUG', 'true').lower() in ('true', '1', 'yes')
+    local_ip = get_local_ip()
+
+    print(f"\n=========================================================")
+    print(f"  Miracle Hostel Management Portal ({app.config.get('ENV', 'development').upper()})")
+    print(f"  > Desktop / Laptop:   http://localhost:{port}")
+    print(f"  > Local Loopback:     http://127.0.0.1:{port}")
+    if local_ip and local_ip != '127.0.0.1':
+        print(f"  > Mobile on Wi-Fi:    http://{local_ip}:{port}")
+    print(f"  > Sign-in Email:      admin@123")
+    print(f"  > Sign-in Password:   1234")
+    if port != requested_port:
+        print(f"  [Notice] Port {requested_port} was in use; started on port {port}.")
+    print(f"=========================================================\n")
+    app.run(host=host, port=port, debug=debug)
 
 
 @app.cli.command("init-db")
@@ -152,21 +216,4 @@ if __name__ == '__main__':
                 password = args[i + 1]
         seed_or_create_admin(email, username, password)
     else:
-        # Development startup: automatically ensure tables & dev admin exist
-        with app.app_context():
-            db.create_all()
-            MigrationService.migrate_schema()
-            if not is_prod:
-                if not Admin.query.first():
-                    seed_or_create_admin()
-                if not Branch.query.first():
-                    seed_database_sample_data()
-
-        port = int(os.environ.get('PORT', 5000))
-        debug = (not is_prod) and os.environ.get('FLASK_DEBUG', 'true').lower() in ('true', '1', 'yes')
-        host = '0.0.0.0' if os.environ.get('PORT') else '127.0.0.1'
-        print(f"\n=========================================================")
-        print(f"  Miracle Hostel Management Portal ({app.config.get('ENV', 'development').upper()})")
-        print(f"  Starting server at http://{host}:{port}                ")
-        print(f"=========================================================\n")
-        app.run(host=host, port=port, debug=debug)
+        run_server()
