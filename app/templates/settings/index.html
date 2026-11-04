@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}Settings & Security Policies{% endblock %}
+
+{% block content %}
+<div class="page-header mb-4">
+  <h1 class="page-title">Settings & System Policies</h1>
+  <p class="page-subtitle">Administrative account credentials, system information, encryption rules, and audit logs</p>
+</div>
+
+<div class="row g-4">
+  <!-- LEFT COLUMN: Admin Profile & Password Change -->
+  <div class="col-lg-6">
+    <!-- Section 1: Administrator Profile -->
+    <div class="card-portal mb-4">
+      <div class="card-portal-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-person-badge text-primary"></i>
+          <h2 class="h6 mb-0 fw-bold">Administrator Profile</h2>
+        </div>
+        <span class="badge bg-primary-subtle text-primary border">Super Admin</span>
+      </div>
+      <div class="card-portal-body">
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="admin-avatar" style="width: 48px; height: 48px; font-size: 1.25rem;">A</div>
+          <div>
+            <h3 class="h6 fw-bold text-dark mb-0">{{ admin.username }}</h3>
+            <span class="text-muted small">{{ admin.role }}</span>
+          </div>
+        </div>
+
+        <dl class="row mb-0 small">
+          <dt class="col-sm-5 text-muted">Account Model:</dt>
+          <dd class="col-sm-7 text-dark fw-semibold">Strict Single Admin Architecture</dd>
+
+          <dt class="col-sm-5 text-muted">Last Active Session:</dt>
+          <dd class="col-sm-7 text-dark">{{ admin.last_login }}</dd>
+
+          <dt class="col-sm-5 text-muted">Account Created:</dt>
+          <dd class="col-sm-7 text-dark">{{ admin.created_at }}</dd>
+
+          <dt class="col-sm-5 text-muted">Password Security:</dt>
+          <dd class="col-sm-7 text-dark">{{ admin.auth_policy }}</dd>
+        </dl>
+      </div>
+      <div class="card-portal-footer">
+        <div class="small text-muted">
+          <i class="bi bi-shield-check text-success me-1"></i> Public registration and unprivileged resident accounts are intentionally excluded by architectural design.
+        </div>
+      </div>
+    </div>
+
+    <!-- Section 2: Change Password Interface -->
+    <div class="card-portal mb-4">
+      <div class="card-portal-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-key text-primary"></i>
+          <h2 class="h6 mb-0 fw-bold">Change Administrator Password</h2>
+        </div>
+      </div>
+      <div class="card-portal-body">
+        <form method="POST" action="{{ url_for('settings.index') }}" novalidate>
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="action" value="change_password">
+
+          <!-- Current Password -->
+          <div class="mb-3">
+            <label for="current_password" class="form-label required">Current Password</label>
+            <div class="input-group">
+              <input 
+                type="password" 
+                class="form-control" 
+                id="current_password" 
+                name="current_password" 
+                placeholder="Enter existing password"
+                required
+              >
+              <button 
+                class="btn btn-outline-secondary" 
+                type="button" 
+                data-toggle="password" 
+                data-target="current_password"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- New Password -->
+          <div class="mb-3">
+            <label for="new_password" class="form-label required">New Password</label>
+            <div class="input-group">
+              <input 
+                type="password" 
+                class="form-control" 
+                id="new_password" 
+                name="new_password" 
+                placeholder="Minimum 4 characters"
+                required
+              >
+              <button 
+                class="btn btn-outline-secondary" 
+                type="button" 
+                data-toggle="password" 
+                data-target="new_password"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Confirm New Password -->
+          <div class="mb-3">
+            <label for="confirm_password" class="form-label required">Confirm New Password</label>
+            <div class="input-group">
+              <input 
+                type="password" 
+                class="form-control" 
+                id="confirm_password" 
+                name="confirm_password" 
+                placeholder="Re-type new password"
+                required
+              >
+              <button 
+                class="btn btn-outline-secondary" 
+                type="button" 
+                data-toggle="password" 
+                data-target="confirm_password"
+              >
+                <i class="bi bi-eye"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i class="bi bi-shield-check me-1"></i> Update Password
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: Application Specs & Security / Audit Policy -->
+  <div class="col-lg-6">
+    <!-- Section 3: Application Information -->
+    <div class="card-portal mb-4">
+      <div class="card-portal-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-info-circle text-primary"></i>
+          <h2 class="h6 mb-0 fw-bold">Application Architecture & Specifications</h2>
+        </div>
+      </div>
+      <div class="card-portal-body">
+        <table class="table table-sm table-borderless mb-0 small">
+          <tbody>
+            <tr>
+              <td class="text-muted fw-semibold" style="width: 40%;">Portal Name:</td>
+              <td class="text-dark fw-bold">Miracle Hostel Management Portal</td>
+            </tr>
+            <tr>
+              <td class="text-muted fw-semibold">Software Release:</td>
+              <td>
+                <span class="badge bg-light text-dark border">Version 1.0 (Phase 1 & Phase 2 UI)</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted fw-semibold">Backend Engine:</td>
+              <td class="text-dark">Python 3.10+ / Flask Modular Blueprints</td>
+            </tr>
+            <tr>
+              <td class="text-muted fw-semibold">Database Engine:</td>
+              <td class="text-dark">PostgreSQL via SQLAlchemy 2.0 ORM</td>
+            </tr>
+            <tr>
+              <td class="text-muted fw-semibold">Data Retention Policy:</td>
+              <td class="text-dark">
+                <span class="badge bg-warning-subtle text-warning-emphasis border">30 Calendar Days Post-Departure</span>
+              </td>
+            </tr>
+            <tr>
+              <td class="text-muted fw-semibold">Frontend Stack:</td>
+              <td class="text-dark">HTML5, CSS3, Vanilla JS, Bootstrap 5.3, Jinja2</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Section 4: Security Policies & Audit Overview -->
+    <div class="card-portal mb-4">
+      <div class="card-portal-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-shield-shaded text-primary"></i>
+          <h2 class="h6 mb-0 fw-bold">Data Protection & Audit Policies</h2>
+        </div>
+      </div>
+      <div class="card-portal-body">
+        <div class="security-notice mb-3">
+          <strong class="d-block text-dark mb-1">Aadhaar Data Governance Rule</strong>
+          All 12-digit Aadhaar numbers are encrypted at rest using AES-256 GCM. The portal strictly masks identification numbers in all directory tables, showing only the final four digits (`XXXX-XXXX-1234`).
+        </div>
+
+        <div class="security-notice mb-3">
+          <strong class="d-block text-dark mb-1">Audit Trail Logging</strong>
+          Crucial administrative changes (branch creation, branch deactivations, resident departures, and payment receipts) are recorded into the database `audit_logs` table.
+        </div>
+
+        <h4 class="h6 fw-bold text-dark mt-3 mb-2">Recent Administrative Audit Events</h4>
+        <div class="list-group list-group-flush border rounded-2 small mb-3">
+          {% for log in audit_logs %}
+            <div class="list-group-item d-flex justify-content-between align-items-center p-2">
+              <div>
+                <span class="badge bg-light text-dark border font-monospace me-1">{{ log.action }}</span>
+                <strong class="text-dark">{{ log.entity }}</strong>
+                <div class="text-muted" style="font-size: 0.75rem;">{{ log.details }}</div>
+              </div>
+              <span class="text-muted small text-nowrap">{{ log.time }}</span>
+            </div>
+          {% endfor %}
+        </div>
+
+        <h4 class="h6 fw-bold text-dark mt-3 mb-2">Automated Retention Purge History</h4>
+        {% if retention_logs %}
+          <div class="list-group list-group-flush border rounded-2 small">
+            {% for rlog in retention_logs %}
+              <div class="list-group-item d-flex justify-content-between align-items-center p-2">
+                <div>
+                  {% if rlog.status == 'SUCCESS' %}
+                    <span class="badge bg-success-subtle text-success border me-1">SUCCESS</span>
+                  {% elif rlog.status == 'NO_OP' %}
+                    <span class="badge bg-light text-secondary border me-1">NO OP</span>
+                  {% else %}
+                    <span class="badge bg-danger-subtle text-danger border me-1">{{ rlog.status }}</span>
+                  {% endif %}
+                  <span class="fw-semibold text-dark">{{ rlog.records_purged }} purged</span>
+                  <div class="text-muted" style="font-size: 0.75rem;">{{ rlog.details }}</div>
+                </div>
+                <span class="text-muted small text-nowrap">{{ rlog.executed_at.strftime('%d %b, %H:%M') }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="text-muted small p-2 border rounded bg-light">No automated retention purges executed yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,677 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ resident.full_name }} ({{ resident.resident_code }}){% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-row justify-content-between align-items-center mb-4">
+  <div class="d-flex align-items-center gap-3">
+    <a href="{{ url_for('residents.index') }}" class="btn btn-outline-secondary btn-sm" title="Back">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <div>
+      <div class="d-flex align-items-center gap-2">
+        <h1 class="page-title mb-0">{{ resident.full_name }}</h1>
+        <span class="font-monospace badge bg-light text-dark border">{{ resident.resident_code }}</span>
+        {% if resident.resident_status == 'ACTIVE' %}
+          <span class="badge-status badge-active">Active Resident</span>
+        {% else %}
+          <span class="badge-status badge-left">Left</span>
+        {% endif %}
+      </div>
+      <p class="page-subtitle mb-0">{{ resident.branch_name }} &bull; {{ resident.room_number }}</p>
+    </div>
+  </div>
+
+  <div class="page-actions d-flex gap-2">
+    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+      <i class="bi bi-cash-stack me-1"></i> Record Payment
+    </button>
+    {% if resident.resident_status == 'ACTIVE' %}
+      <button class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#markLeftModal">
+        <i class="bi bi-door-open me-1"></i> Mark as Left
+      </button>
+    {% else %}
+      <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#reactivateModal">
+        <i class="bi bi-arrow-repeat me-1"></i> Reactivate Resident
+      </button>
+    {% endif %}
+  </div>
+</div>
+
+{% if resident.resident_status == 'LEFT' and resident.retention %}
+  <!-- 30-Day Retention Notice Banner -->
+  <div class="alert alert-warning d-flex flex-wrap align-items-center justify-content-between gap-3 p-3 mb-4 rounded-3 border-warning shadow-sm">
+    <div class="d-flex align-items-center gap-3">
+      <i class="bi bi-clock-history fs-3 text-warning"></i>
+      <div>
+        <strong class="d-block text-dark">Departed Resident &bull; 30-Day Retention Grace Period Active</strong>
+        <span>
+          Left on <strong>{{ resident.leaving_date|format_date }}</strong>. Retention deadline: <strong>{{ resident.retention.deadline|format_date }}</strong>.
+          Full profile and payment records remain accessible throughout the grace window.
+        </span>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge-status {{ resident.retention.badge_class }} fs-6">
+        {{ resident.retention.label }}
+      </span>
+      <button class="btn btn-sm btn-success" data-bs-toggle="modal" data-bs-target="#reactivateModal">
+        <i class="bi bi-arrow-repeat me-1"></i> Reactivate
+      </button>
+    </div>
+  </div>
+{% endif %}
+
+<div class="row g-4">
+  <!-- LEFT COLUMN: Profile Overview & Personal Info -->
+  <div class="col-lg-4">
+    <!-- Profile Card -->
+    <div class="card-portal mb-4">
+      <div class="card-portal-body text-center p-4">
+        <img src="{{ resident.photograph_path }}" alt="{{ resident.full_name }}" class="avatar-lg mb-3 shadow-sm">
+        <h2 class="h5 fw-bold text-dark mb-1">{{ resident.full_name }}</h2>
+        <span class="text-muted small d-block mb-3">{{ resident.resident_code }}</span>
+
+        <div class="d-grid gap-2 mb-3">
+          <div class="p-2 rounded bg-light border text-start">
+            <span class="text-muted small d-block">Assigned Branch</span>
+            <strong class="text-dark">{{ resident.branch_name }}</strong>
+          </div>
+          <div class="p-2 rounded bg-light border text-start">
+            <span class="text-muted small d-block">Room / Bed Assignment</span>
+            <strong class="text-dark">{{ resident.room_number }}</strong>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-outline-secondary btn-sm flex-grow-1" data-bs-toggle="modal" data-bs-target="#editResidentInfoModal">
+            <i class="bi bi-pencil me-1"></i> Edit Profile Information
+          </button>
+          <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#updatePhotoModal" title="Update Photograph">
+            <i class="bi bi-camera me-1"></i> Photo
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Personal & Identification Card -->
+    <div class="card-portal mb-4">
+      <div class="card-portal-header">
+        <h3 class="h6 mb-0 fw-bold">
+          <i class="bi bi-shield-lock text-primary me-2"></i>Identification & Contact
+        </h3>
+      </div>
+      <div class="card-portal-body">
+        <dl class="row mb-0 small">
+          <dt class="col-sm-5 text-muted">Aadhaar ID</dt>
+          <dd class="col-sm-7 fw-bold font-monospace text-dark">
+            {{ full_aadhaar or resident.masked_aadhaar }}
+            <span class="badge bg-success-subtle text-success ms-1 small">Encrypted at rest</span>
+          </dd>
+
+          <dt class="col-sm-5 text-muted">Phone Number</dt>
+          <dd class="col-sm-7 text-dark">{{ resident.phone_number }}</dd>
+
+          <dt class="col-sm-5 text-muted">Emergency</dt>
+          <dd class="col-sm-7 text-dark">{{ resident.emergency_contact }}</dd>
+
+          <dt class="col-sm-5 text-muted">Admission Date</dt>
+          <dd class="col-sm-7 text-dark">{{ resident.admission_date|format_date }}</dd>
+
+          {% if resident.leaving_date %}
+            <dt class="col-sm-5 text-muted">Departure Date</dt>
+            <dd class="col-sm-7 text-danger fw-semibold">{{ resident.leaving_date|format_date }}</dd>
+          {% endif %}
+        </dl>
+      </div>
+    </div>
+
+    {% if stay_history and stay_history|length > 0 %}
+      <!-- Stay & Admission History Card -->
+      <div class="card-portal mb-4">
+        <div class="card-portal-header">
+          <h3 class="h6 mb-0 fw-bold">
+            <i class="bi bi-clock-history text-primary me-2"></i>Stay & Admission History
+          </h3>
+        </div>
+        <div class="card-portal-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0 small">
+              <thead class="table-light">
+                <tr>
+                  <th>Stay</th>
+                  <th>Admission</th>
+                  <th>Departure</th>
+                  <th>Duration</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for s in stay_history %}
+                  <tr>
+                    <td class="fw-semibold">#{{ s.stay_number }}</td>
+                    <td>{{ s.admission_date|format_date }}</td>
+                    <td>
+                      {% if s.leaving_date %}
+                        <span class="text-danger">{{ s.leaving_date|format_date }}</span>
+                      {% else %}
+                        <span class="badge bg-success-subtle text-success">Active Stay</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      {% if s.duration_days is not none %}
+                        {{ s.duration_days }}d
+                      {% else %}
+                        Current
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- RIGHT COLUMN: Financial Summary & Payment History -->
+  <div class="col-lg-8">
+    <!-- Financial KPI Summary Cards (4 Cards) -->
+    <div class="row g-3 mb-4">
+      <!-- 1. Security Deposit -->
+      <div class="col-sm-6 col-xl-3">
+        <div class="card-portal p-3 h-100 d-flex flex-column justify-content-between">
+          <div>
+            <span class="text-muted small text-uppercase fw-semibold d-block">Security Deposit</span>
+            <div class="h5 fw-bold text-dark mt-1 mb-0">{{ resident.deposit_received|currency }}</div>
+            <div class="small text-muted mb-2">Expected: {{ resident.deposit_due|currency }}</div>
+          </div>
+          <div>
+            {% if resident.deposit_status == 'PAID' %}
+              <span class="badge-status badge-paid">Fully Deposited</span>
+            {% elif resident.deposit_status == 'PARTIAL' %}
+              <span class="badge-status badge-partial">Due: {{ resident.deposit_outstanding|currency }}</span>
+            {% else %}
+              <span class="badge-status badge-unpaid">Pending: {{ resident.deposit_outstanding|currency }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Admission Rent -->
+      <div class="col-sm-6 col-xl-3">
+        <div class="card-portal p-3 h-100 d-flex flex-column justify-content-between">
+          <div>
+            <span class="text-muted small text-uppercase fw-semibold d-block">Admission Rent</span>
+            <div class="h5 fw-bold text-dark mt-1 mb-0">{{ resident.admission_rent_received|currency }}</div>
+            <div class="small text-muted mb-2">Expected: {{ resident.admission_rent_expected|currency }}</div>
+          </div>
+          <div>
+            {% if resident.admission_rent_status == 'PAID' %}
+              <span class="badge-status badge-paid">Settled</span>
+            {% elif resident.admission_rent_status == 'PARTIAL' %}
+              <span class="badge-status badge-partial">Due: {{ resident.admission_rent_outstanding|currency }}</span>
+            {% else %}
+              <span class="badge-status badge-unpaid">Pending: {{ resident.admission_rent_outstanding|currency }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Monthly Rent Ledger -->
+      <div class="col-sm-6 col-xl-3">
+        <div class="card-portal p-3 h-100 d-flex flex-column justify-content-between">
+          <div>
+            <span class="text-muted small text-uppercase fw-semibold d-block">Monthly Rent</span>
+            <div class="h5 fw-bold text-success mt-1 mb-0">{{ resident.total_rent_paid|currency }}</div>
+            <div class="small text-muted mb-2">Agreed: {{ resident.monthly_rent_amount|currency }}/mo</div>
+          </div>
+          <div>
+            {% if resident.outstanding_rent > 0 %}
+              <span class="badge-status badge-unpaid">Due: {{ resident.outstanding_rent|currency }}</span>
+            {% else %}
+              <span class="badge-status badge-paid">All Clear</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. Total Balance Overview -->
+      <div class="col-sm-6 col-xl-3">
+        <div class="card-portal p-3 h-100 d-flex flex-column justify-content-between">
+          <div>
+            <span class="text-muted small text-uppercase fw-semibold d-block">Total Financials</span>
+            <div class="h5 fw-bold text-primary mt-1 mb-0">{{ resident.total_financial_received|currency }}</div>
+            <div class="small text-muted mb-2">Verified Inflows</div>
+          </div>
+          <div>
+            {% if resident.total_financial_outstanding > 0 %}
+              <span class="badge-status badge-unpaid">Balance: {{ resident.total_financial_outstanding|currency }}</span>
+            {% else %}
+              <span class="badge-status badge-paid">Zero Dues</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Complete Payment History Table -->
+    <div class="card-portal">
+      <div class="card-portal-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-clock-history text-primary"></i>
+          <h3 class="h6 mb-0 fw-bold">Financial Transaction History</h3>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#generateRentModal">
+            <i class="bi bi-calendar-plus me-1"></i> Generate Monthly Rent
+          </button>
+          <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#recordPaymentModal">
+            <i class="bi bi-plus-lg me-1"></i> Add Transaction
+          </button>
+        </div>
+      </div>
+      <div class="card-portal-body p-0">
+        <div class="table-responsive-portal">
+          <table class="table-portal">
+            <thead>
+              <tr>
+                <th>Payment ID</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Date</th>
+                <th>Method & Reference</th>
+                <th>Status</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in payments %}
+                <tr>
+                  <td>
+                    <span class="font-monospace fw-bold text-dark">{{ p.payment_id }}</span>
+                  </td>
+                  <td>
+                    {% if p.payment_type == 'SECURITY_DEPOSIT' %}
+                      <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Deposit</span>
+                    {% elif p.payment_type == 'ADMISSION_RENT' %}
+                      <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">Admission Rent</span>
+                    {% elif p.payment_type in ['MONTHLY_RENT', 'RENT'] %}
+                      <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">Monthly Rent</span>
+                    {% elif p.payment_type == 'OTHER_CHARGES' %}
+                      <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">Other Charges</span>
+                    {% else %}
+                      <span class="badge bg-light text-dark border">{{ p.payment_type }}</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="fw-bold text-dark">{{ p.amount|currency }}</span>
+                  </td>
+                  <td>{{ p.payment_date|format_date }}</td>
+                  <td>
+                    <span class="badge bg-light text-secondary border">{{ p.payment_method }}</span>
+                    {% if p.transaction_reference %}
+                      <div class="small text-muted font-monospace">{{ p.transaction_reference }}</div>
+                    {% endif %}
+                  </td>
+                  <td>
+                    {% if p.payment_status == 'PAID' %}
+                      <span class="badge-status badge-paid">Paid</span>
+                    {% elif p.payment_status == 'PARTIAL' %}
+                      <span class="badge-status badge-partial">Partial</span>
+                    {% else %}
+                      <span class="badge-status badge-unpaid">Unpaid</span>
+                    {% endif %}
+                  </td>
+                  <td class="small text-muted" style="max-width: 200px;">
+                    {{ p.notes or '—' }}
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="7" class="text-center py-4 text-muted">
+                    No payment transactions recorded for this resident yet.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-portal-footer text-muted small">
+        <i class="bi bi-info-circle me-1"></i> Previous transactions are preserved immutably. Adding new payments creates new ledger records.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     MODALS
+     ========================================================================= -->
+
+<!-- Record Payment Modal -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" aria-labelledby="recordPaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="recordPaymentModalLabel">
+          <i class="bi bi-cash-stack text-primary me-2"></i>Record Payment &bull; {{ resident.full_name }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('payments.index') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="resident_id" value="{{ resident.id }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label required">Payment Type</label>
+            <select class="form-select" name="payment_type" required>
+              <option value="MONTHLY_RENT" selected>Monthly Rent</option>
+              <option value="ADMISSION_RENT">Admission Rent</option>
+              <option value="SECURITY_DEPOSIT">Security Deposit</option>
+              <option value="OTHER_CHARGES">Other Charges</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Amount (₹)</label>
+            <input type="number" class="form-control" name="amount" value="{{ resident.monthly_rent_amount }}" step="any" min="1" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label required">Payment Method</label>
+              <select class="form-select" name="payment_method" required>
+                <option value="UPI" selected>UPI (GPay / PhonePe / Paytm)</option>
+                <option value="BANK_TRANSFER">Bank Transfer (NEFT / IMPS)</option>
+                <option value="CASH">Cash</option>
+                <option value="CHEQUE">Cheque</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label required">Payment Date</label>
+              <input type="date" class="form-control" name="payment_date" value="{{ today }}" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Transaction Reference</label>
+            <input type="text" class="form-control" name="transaction_reference" placeholder="e.g. UPI/4291008129">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="Optional payment remarks"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Confirm & Save Payment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Generate Monthly Rent Obligation Modal -->
+<div class="modal fade" id="generateRentModal" tabindex="-1" aria-labelledby="generateRentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="generateRentModalLabel">
+          <i class="bi bi-calendar-plus text-primary me-2"></i>Generate Monthly Rent Due &bull; {{ resident.full_name }}
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('payments.generate_obligation') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="resident_id" value="{{ resident.id }}">
+        <input type="hidden" name="obligation_type" value="MONTHLY_RENT">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label required">Billing Month</label>
+            <input type="month" class="form-control" name="billing_month" value="{{ today[:7] }}" required>
+            <div class="form-text">System prevents duplicate obligations for the same resident and billing cycle.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Title / Description</label>
+            <input type="text" class="form-control" name="title" value="Monthly Rent - {{ today[:7] }}" required>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label required">Expected Amount (₹)</label>
+              <input type="number" class="form-control" name="expected_amount" value="{{ resident.monthly_rent_amount }}" step="any" min="1" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label required">Due Date</label>
+              <input type="date" class="form-control" name="due_date" value="{{ today }}" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Notes</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="Optional notes for this billing cycle"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Generate Obligation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Mark as Left Confirmation Modal -->
+<div class="modal fade" id="markLeftModal" tabindex="-1" aria-labelledby="markLeftModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="markLeftModalLabel">
+          <i class="bi bi-door-open text-danger me-2"></i>Resident Departure Process
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('residents.departure', resident_code=resident.resident_code) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <p class="text-dark mb-3">
+            Confirm departure transition for <strong>{{ resident.full_name }}</strong> (<code>{{ resident.resident_code }}</code> &bull; {{ resident.branch_name }}).
+          </p>
+
+          <!-- Outstanding Balances Display & Follow-up Highlight -->
+          <div class="card p-3 mb-3 bg-light border">
+            <h6 class="fw-bold text-dark mb-2 small text-uppercase">Account Financial Summary at Departure</h6>
+            <div class="row g-2 small">
+              <div class="col-6">
+                <span class="text-muted d-block">Outstanding Rent:</span>
+                <strong class="{% if resident.outstanding_rent > 0 %}text-danger{% else %}text-success{% endif %}">
+                  {{ resident.outstanding_rent|currency }}
+                </strong>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block">Deposit Outstanding:</span>
+                <strong class="{% if resident.deposit_outstanding > 0 %}text-danger{% else %}text-success{% endif %}">
+                  {{ resident.deposit_outstanding|currency }}
+                </strong>
+              </div>
+            </div>
+            {% if resident.total_financial_outstanding > 0 %}
+              <div class="alert alert-danger p-2 mt-2 mb-0 small">
+                <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                <strong>Unsettled Balance: {{ resident.total_financial_outstanding|currency }}</strong>.
+                Unpaid dues remain recorded for administrative follow-up. Departure will proceed.
+              </div>
+            {% else %}
+              <div class="alert alert-success p-2 mt-2 mb-0 small">
+                <i class="bi bi-check-circle-fill me-1"></i> All rental dues and deposits fully settled.
+              </div>
+            {% endif %}
+          </div>
+
+          <div class="security-notice mb-3">
+            <strong class="d-block text-dark">30-Day Retention Policy Notice</strong>
+            The resident record will transition to <strong>LEFT</strong> and move to <em>Previous Residents</em>. All personal profiles and financial ledgers remain fully accessible for 30 calendar days.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">Actual Departure Date</label>
+            <input type="date" class="form-control" name="leaving_date" value="{{ today }}" min="{{ resident.admission_date }}" required>
+            <div class="form-text">Cannot be earlier than admission date ({{ resident.admission_date|format_date }}).</div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Departure Notes / Handover Remarks</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="e.g. Completed tenancy, keys handed over, forwarding address provided"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger btn-sm">Confirm Departure</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Reactivate Returning Resident Modal -->
+<div class="modal fade" id="reactivateModal" tabindex="-1" aria-labelledby="reactivateModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reactivateModalLabel">
+          <i class="bi bi-arrow-repeat text-success me-2"></i>Reactivate Returning Resident
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('residents.reactivate', resident_code=resident.resident_code) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <p class="text-dark mb-3">
+            Reactivate <strong>{{ resident.full_name }}</strong> (<code>{{ resident.resident_code }}</code>) to <strong>ACTIVE</strong> status.
+          </p>
+
+          <div class="alert alert-info p-3 mb-3 small">
+            <strong class="d-block text-dark mb-1"><i class="bi bi-shield-check me-1"></i> Complete History Preservation</strong>
+            Previous stay (Admitted: {{ resident.admission_date|format_date }}{% if resident.leaving_date %} &bull; Left: {{ resident.leaving_date|format_date }}{% endif %}) and all past payment records remain permanently intact in the historical ledger.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">New Admission Date</label>
+            <input type="date" class="form-control" name="new_admission_date" value="{{ today }}" {% if resident.leaving_date %}min="{{ resident.leaving_date }}"{% endif %} required>
+            <div class="form-text">Sets the beginning of the resident's new active stay cycle.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">Branch Assignment</label>
+            <select class="form-select" name="branch_id" required>
+              {% for b in active_branches %}
+                <option value="{{ b.id }}" {% if b.id == resident.branch_id %}selected{% endif %}>
+                  {{ b.branch_name }} ({{ b.branch_code }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Reactivation Notes</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="e.g. Re-enrolled for academic term 2026-27"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success btn-sm">Confirm Reactivation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editResidentInfoModal" tabindex="-1" aria-labelledby="editResidentInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editResidentInfoModalLabel">
+          <i class="bi bi-pencil-square text-primary me-2"></i>Edit Resident Profile
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('residents.edit', resident_code=resident.resident_code) }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label required">Full Legal Name</label>
+            <input type="text" class="form-control" name="full_name" value="{{ resident.full_name }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">Hostel Branch Assignment</label>
+            <select class="form-select" name="branch_id" required>
+              {% for b in active_branches %}
+                <option value="{{ b.id }}" {% if b.id == resident.branch_id %}selected{% endif %}>
+                  {{ b.branch_name }} ({{ b.branch_code }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">Admission Date</label>
+            <input type="date" class="form-control" name="admission_date" value="{{ resident.admission_date }}" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Aadhaar Identification Number</label>
+            <input 
+              type="text" 
+              class="form-control font-monospace" 
+              name="aadhaar_number" 
+              value="{{ full_aadhaar or '' }}"
+              placeholder="12-digit Aadhaar number"
+              maxlength="14"
+              autocomplete="off"
+              data-aadhaar-input
+            >
+            <div class="form-text">View and edit Aadhaar number. Encrypted with AES-256 before storing in PostgreSQL.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Replace Resident Photograph</label>
+            <input type="file" class="form-control form-control-sm" name="photograph" accept="image/*">
+            <div class="form-text">JPG, PNG, or WEBP (Max 5MB). Obsolete photo is removed upon update.</div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">
+            <i class="bi bi-check-lg me-1"></i> Save Changes
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Update Photograph Quick Modal -->
+<div class="modal fade" id="updatePhotoModal" tabindex="-1" aria-labelledby="updatePhotoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title h6" id="updatePhotoModalLabel">
+          <i class="bi bi-camera text-primary me-2"></i>Update Photograph
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('residents.update_photo', resident_code=resident.resident_code) }}" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <label class="form-label small">Select new image</label>
+          <input type="file" class="form-control form-control-sm" name="photograph" accept="image/*" required>
+          <div class="form-text small">JPEG, PNG, WebP up to 5MB. Previous photo is securely deleted.</div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Upload & Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+
+{% block title %}Branch Management{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-row justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="page-title">Branch Management</h1>
+    <p class="page-subtitle">Configure hostel locations, view branch-level resident occupancy, and manage active status</p>
+  </div>
+  <div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addBranchModal">
+      <i class="bi bi-plus-lg me-1"></i> Add New Branch
+    </button>
+  </div>
+</div>
+
+<!-- =========================================================================
+     BRANCH STATS OVERVIEW
+     ========================================================================= -->
+<div class="row g-3 mb-4">
+  <div class="col-sm-4">
+    <div class="card-portal p-3">
+      <span class="text-muted small text-uppercase fw-semibold">Active Branches</span>
+      <div class="h3 fw-bold text-success mt-1 mb-0">{{ active_count }} Active</div>
+      <span class="small text-muted">Currently accepting admissions</span>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card-portal p-3">
+      <span class="text-muted small text-uppercase fw-semibold">Deactivated Branches</span>
+      <div class="h3 fw-bold text-secondary mt-1 mb-0">{{ inactive_count }} Inactive</div>
+      <span class="small text-muted">Historical records fully retained</span>
+    </div>
+  </div>
+  <div class="col-sm-4">
+    <div class="card-portal p-3">
+      <span class="text-muted small text-uppercase fw-semibold">Total Lifecycle Capacity</span>
+      <div class="h3 fw-bold text-dark mt-1 mb-0">{{ total_capacity }} Residents</div>
+      <span class="small text-muted">Across all branches combined</span>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     BRANCHES TABLE
+     ========================================================================= -->
+<div class="card-portal mb-4">
+  <div class="card-portal-header flex-wrap gap-3">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-building text-primary"></i>
+      <h2 class="h6 mb-0 fw-bold">Hostel Branches Directory</h2>
+      <span class="badge bg-light text-muted border ms-2">System-wide Branches</span>
+    </div>
+
+    <!-- Search & Status Filter Form -->
+    <form method="GET" action="{{ url_for('branches.index') }}" class="d-flex flex-wrap align-items-center gap-2 ms-auto">
+      <div class="input-group input-group-sm" style="width: 240px;">
+        <span class="input-group-text bg-white border-end-0">
+          <i class="bi bi-search text-muted"></i>
+        </span>
+        <input 
+          type="text" 
+          name="search" 
+          class="form-control border-start-0" 
+          placeholder="Search name, code..." 
+          value="{{ search_query }}"
+        >
+      </div>
+
+      <select name="status" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+        <option value="all" {% if selected_status == 'all' %}selected{% endif %}>Status: All</option>
+        <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active Only</option>
+        <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Deactivated Only</option>
+      </select>
+
+      {% if search_query or selected_status != 'all' %}
+        <a href="{{ url_for('branches.index') }}" class="btn btn-sm btn-outline-secondary" title="Reset Filters">
+          <i class="bi bi-x-circle me-1"></i> Reset
+        </a>
+      {% endif %}
+    </form>
+  </div>
+  <div class="card-portal-body p-0">
+    <div class="table-responsive-portal">
+      <table class="table-portal">
+        <thead>
+          <tr>
+            <th>Branch Name & Code</th>
+            <th>Address</th>
+            <th>Contact Phone</th>
+            <th>Active Residents</th>
+            <th>Total (Lifecycle)</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for b in branches %}
+            <tr class="{% if not b.is_active %}bg-light text-muted{% endif %}">
+              <!-- Name & Code -->
+              <td>
+                <div class="fw-bold text-dark">{{ b.branch_name }}</div>
+                <span class="badge bg-light text-secondary border font-monospace">{{ b.branch_code }}</span>
+              </td>
+
+              <!-- Address -->
+              <td style="max-width: 250px;">
+                <span class="small text-muted">{{ b.address }}</span>
+              </td>
+
+              <!-- Contact -->
+              <td>
+                <span class="text-dark">{{ b.contact_number }}</span>
+              </td>
+
+              <!-- Active Residents -->
+              <td>
+                <span class="fw-bold text-success">{{ b.active_residents_count }}</span>
+                <span class="small text-muted">residents</span>
+              </td>
+
+              <!-- Total Lifetime -->
+              <td>
+                <span class="text-dark">{{ b.total_residents_count }}</span>
+              </td>
+
+              <!-- Status -->
+              <td>
+                {% if b.is_active %}
+                  <span class="badge-status badge-active">Active</span>
+                {% else %}
+                  <span class="badge-status badge-secondary">Deactivated</span>
+                {% endif %}
+              </td>
+
+              <!-- Actions -->
+              <td class="text-end">
+                <div class="d-flex justify-content-end gap-1">
+                  <!-- Edit Button -->
+                  <button 
+                    class="btn btn-sm btn-outline-secondary py-1 px-2" 
+                    title="Edit Branch"
+                    data-bs-toggle="modal" 
+                    data-bs-target="#editBranchModal"
+                    data-branch-id="{{ b.id }}"
+                    data-branch-name="{{ b.branch_name }}"
+                    data-branch-code="{{ b.branch_code }}"
+                    data-branch-address="{{ b.address }}"
+                    data-branch-contact="{{ b.contact_number }}"
+                  >
+                    <i class="bi bi-pencil"></i> Edit
+                  </button>
+
+                  <!-- Deactivate / Activate Button -->
+                  {% if b.is_active %}
+                    <button 
+                      class="btn btn-sm btn-outline-danger py-1 px-2" 
+                      title="Deactivate Branch"
+                      data-bs-toggle="modal" 
+                      data-bs-target="#deactivateBranchModal"
+                      data-branch-id="{{ b.id }}"
+                      data-branch-name="{{ b.branch_name }}"
+                      data-branch-code="{{ b.branch_code }}"
+                      data-active-residents="{{ b.active_residents_count }}"
+                    >
+                      <i class="bi bi-pause-circle"></i> Deactivate
+                    </button>
+                  {% else %}
+                    <form method="POST" action="{{ url_for('branches.index') }}" class="d-inline">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="action" value="toggle_status">
+                      <input type="hidden" name="branch_id" value="{{ b.id }}">
+                      <input type="hidden" name="new_status" value="activate">
+                      <button type="submit" class="btn btn-sm btn-outline-success py-1 px-2" title="Reactivate Branch">
+                        <i class="bi bi-play-circle"></i> Activate
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="7" class="text-center py-4 text-muted">
+                <i class="bi bi-building-exclamation fs-3 d-block mb-2 text-secondary"></i>
+                No branches found matching your search or filter criteria.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-portal-footer">
+    <div class="security-notice mb-0">
+      <i class="bi bi-shield-check text-primary me-1"></i>
+      <strong>Branch Retention Guarantee:</strong> Deactivating a branch disables new admissions for that branch while preserving all historical resident records, financial ledgers, and transactions indefinitely.
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     MODALS
+     ========================================================================= -->
+
+<!-- Add Branch Modal -->
+<div class="modal fade" id="addBranchModal" tabindex="-1" aria-labelledby="addBranchModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="addBranchModalLabel">
+          <i class="bi bi-building-add text-primary me-2"></i>Add New Hostel Branch
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('branches.index') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="add">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label required">Branch Name</label>
+            <input type="text" class="form-control" name="branch_name" placeholder="e.g. South Campus - Velachery" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Branch Code (Unique Identifier)</label>
+            <input type="text" class="form-control font-monospace" name="branch_code" placeholder="e.g. BR-VEL-05" required>
+            <div class="form-text">Short unique code used in resident registration IDs.</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Address</label>
+            <textarea class="form-control" name="address" rows="2" placeholder="Full street address and pincode" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Contact Phone Number</label>
+            <input type="tel" class="form-control" name="contact_number" placeholder="+91 98400 00000" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Create Branch</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Branch Modal -->
+<div class="modal fade" id="editBranchModal" tabindex="-1" aria-labelledby="editBranchModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editBranchModalLabel">
+          <i class="bi bi-pencil-square text-primary me-2"></i>Edit Branch Details
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('branches.index') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="edit">
+        <input type="hidden" name="branch_id" id="edit_branch_id">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label required">Branch Name</label>
+            <input type="text" class="form-control" id="edit_branch_name" name="branch_name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Branch Code</label>
+            <input type="text" class="form-control font-monospace" id="edit_branch_code" name="branch_code" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Address</label>
+            <textarea class="form-control" id="edit_branch_address" name="address" rows="2" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label required">Contact Phone Number</label>
+            <input type="tel" class="form-control" id="edit_branch_contact" name="contact_number" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Deactivate Branch Confirmation Modal -->
+<div class="modal fade" id="deactivateBranchModal" tabindex="-1" aria-labelledby="deactivateBranchModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title text-danger" id="deactivateBranchModalLabel">
+          <i class="bi bi-exclamation-triangle text-danger me-2"></i>Deactivate Branch Confirmation
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('branches.index') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="toggle_status">
+        <input type="hidden" name="branch_id" id="deact_branch_id">
+        <input type="hidden" name="new_status" value="deactivate">
+        <div class="modal-body">
+          <p class="text-dark mb-2">
+            Are you sure you want to deactivate <strong id="deact_branch_title">Branch</strong>?
+          </p>
+          <div class="alert alert-warning small mb-3">
+            <i class="bi bi-info-circle me-1"></i>
+            Current active residents: <strong id="deact_active_count">0</strong>.
+          </div>
+          <div id="deact_residents_warning" class="alert alert-danger small mb-3 d-none">
+            <i class="bi bi-shield-x me-1"></i>
+            <strong>Deactivation Blocked:</strong> This branch currently has active residents. Miracle Hostel policy requires transferring or vacating all residents before deactivation.
+          </div>
+          <div class="security-notice">
+            <strong class="d-block text-dark">Data Protection Guarantee:</strong>
+            Deactivating a branch does <strong>NOT</strong> delete any historical data, past residents, or payment records. New resident admissions to this branch will be paused until reactivated.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" id="deact_confirm_btn" class="btn btn-danger btn-sm">Confirm Deactivation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

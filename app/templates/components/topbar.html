@@ -1,0 +1,61 @@
+<!-- Miracle Hostel Topbar Navigation -->
+<header class="app-topbar">
+  <div class="topbar-left">
+    <!-- Mobile Hamburger Button -->
+    <button class="btn btn-outline-primary mobile-menu-btn d-lg-none p-2" id="mobileMenuToggle" aria-label="Open Navigation">
+      <i class="bi bi-list fs-5"></i>
+    </button>
+
+    <!-- Global Branch Filter Selector -->
+    <div class="branch-selector-container">
+      <span class="text-muted small fw-semibold d-none d-sm-inline">
+        <i class="bi bi-geo-alt me-1 text-primary"></i>Branch:
+      </span>
+      <select class="form-select form-select-sm" id="globalBranchSelect" style="max-width: 280px; font-weight: 500;">
+        <option value="all" {% if request.args.get('branch') == 'all' or not request.args.get('branch') %}selected{% endif %}>
+          All Branches (Consolidated View)
+        </option>
+        {% for b in header_active_branches %}
+          <option value="{{ b.id }}" {% if request.args.get('branch') == (b.id|string) %}selected{% endif %}>
+            {{ b.branch_name }} ({{ b.branch_code }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <!-- System Status Indicator -->
+    <div class="system-status-indicator d-none d-md-inline-flex">
+      <span class="status-dot"></span>
+      <span>System Active • 30d Retention Active</span>
+    </div>
+
+    <!-- User / Logout Control -->
+    <div class="dropdown">
+      <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex align-items-center gap-2" type="button" id="adminMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+        <i class="bi bi-person-circle"></i>
+        <span class="d-none d-sm-inline">{{ current_user.username if current_user.is_authenticated else 'admin' }}</span>
+      </button>
+      <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="adminMenuDropdown">
+        <li>
+          <h6 class="dropdown-header">
+            {{ current_user.email if current_user.is_authenticated else 'Super Admin' }}
+          </h6>
+        </li>
+        <li>
+          <a class="dropdown-item" href="{{ url_for('settings.index') }}">
+            <i class="bi bi-gear me-2 text-muted"></i>Settings & Security
+          </a>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
+          <a class="dropdown-item text-danger" href="{{ url_for('auth.logout') }}">
+            <i class="bi bi-box-arrow-right me-2"></i>Sign Out
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</header>
+

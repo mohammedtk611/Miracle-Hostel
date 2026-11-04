@@ -1,0 +1,81 @@
+<!-- Miracle Hostel Sidebar Navigation -->
+<aside class="app-sidebar">
+  <div class="sidebar-brand">
+    <a href="{{ url_for('dashboard.index') }}" class="brand-link">
+      <div class="brand-icon">
+        <i class="bi bi-building"></i>
+      </div>
+      <div class="brand-text">
+        <span class="brand-name">MIRACLE</span>
+        <span class="brand-subtitle">HOSTEL PORTAL</span>
+      </div>
+    </a>
+    <button class="sidebar-toggle-btn d-none d-lg-flex" id="sidebarDesktopToggle" title="Collapse Sidebar">
+      <i class="bi bi-layout-sidebar-inset"></i>
+    </button>
+  </div>
+
+  <div class="sidebar-nav-container">
+    <div class="nav-section-title">Operations</div>
+    <ul class="sidebar-nav-list">
+      <li class="nav-item">
+        <a href="{{ url_for('dashboard.index') }}" class="nav-link-portal {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+          <i class="bi bi-grid-1x2"></i>
+          <span class="nav-text">Dashboard</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{{ url_for('residents.index') }}" class="nav-link-portal {% if request.endpoint == 'residents.index' %}active{% endif %}">
+          <i class="bi bi-people"></i>
+          <span class="nav-text">Residents</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{{ url_for('residents.add') }}" class="nav-link-portal {% if request.endpoint == 'residents.add' %}active{% endif %}">
+          <i class="bi bi-person-plus"></i>
+          <span class="nav-text">Add Resident</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{{ url_for('payments.index') }}" class="nav-link-portal {% if request.endpoint == 'payments.index' %}active{% endif %}">
+          <i class="bi bi-cash-stack"></i>
+          <span class="nav-text">Payments</span>
+        </a>
+      </li>
+    </ul>
+
+    <div class="nav-section-title mt-3">Administration</div>
+    <ul class="sidebar-nav-list">
+      <li class="nav-item">
+        <a href="{{ url_for('branches.index') }}" class="nav-link-portal {% if request.endpoint == 'branches.index' %}active{% endif %}">
+          <i class="bi bi-diagram-3"></i>
+          <span class="nav-text">Branch Management</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{{ url_for('residents.previous') }}" class="nav-link-portal {% if request.endpoint == 'residents.previous' %}active{% endif %}">
+          <i class="bi bi-clock-history"></i>
+          <span class="nav-text">Previous Residents</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a href="{{ url_for('settings.index') }}" class="nav-link-portal {% if request.endpoint == 'settings.index' %}active{% endif %}">
+          <i class="bi bi-gear"></i>
+          <span class="nav-text">Settings</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="admin-chip">
+      <div class="admin-avatar">{{ (current_user.username[:1]|upper) if current_user.is_authenticated else 'A' }}</div>
+      <div class="admin-meta">
+        <span class="admin-meta-name">{{ current_user.username if current_user.is_authenticated else 'Administrator' }}</span>
+        <span class="admin-meta-role">{{ current_user.email if current_user.is_authenticated else 'Central Operations' }}</span>
+      </div>
+    </div>
+  </div>
+</aside>
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+

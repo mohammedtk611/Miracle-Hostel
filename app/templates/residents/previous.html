@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Previous Residents (30-Day Retention Policy){% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-row justify-content-between align-items-center mb-3">
+  <div>
+    <div class="d-flex align-items-center gap-2">
+      <h1 class="page-title">Previous Residents</h1>
+      <span class="badge bg-secondary-subtle text-secondary border">{{ total_count }} Historical Records</span>
+    </div>
+    <p class="page-subtitle">Historical records of departed residents subject to automated 30-day data retention</p>
+  </div>
+  <div>
+    <a href="{{ url_for('residents.index') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-people me-1"></i> Active Residents Directory
+    </a>
+  </div>
+</div>
+
+<!-- =========================================================================
+     30-DAY RETENTION POLICY BANNER
+     ========================================================================= -->
+<div class="alert alert-secondary border d-flex align-items-start gap-3 p-3 mb-4 rounded-3 bg-white shadow-sm">
+  <i class="bi bi-shield-exclamation fs-3 text-primary mt-1"></i>
+  <div class="flex-grow-1">
+    <div class="d-flex align-items-center justify-content-between">
+      <strong class="text-dark">30-Day Data Retention Policy Active</strong>
+      <span class="badge bg-light text-muted border font-monospace">Policy: RETENTION_30D</span>
+    </div>
+    <p class="small text-muted mb-0 mt-1">
+      When a resident departs, their status transitions to <strong>LEFT</strong> and moves here. 
+      All personal profiles and financial payment records remain fully accessible for <strong>30 calendar days</strong>. 
+      Records exceeding 30 days become eligible for permanent purge. Automatic deletion executes in Phase 3.
+    </p>
+  </div>
+</div>
+
+<!-- =========================================================================
+     FILTER & SEARCH TOOLBAR
+     ========================================================================= -->
+<div class="card-portal mb-3">
+  <div class="card-portal-body p-3">
+    <form method="GET" action="{{ url_for('residents.previous') }}" class="filter-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <!-- Search Input -->
+      <div class="input-group" style="max-width: 320px;">
+        <span class="input-group-text bg-white border-end-0 text-muted">
+          <i class="bi bi-search"></i>
+        </span>
+        <input 
+          type="text" 
+          name="search" 
+          id="tableLiveSearch"
+          class="form-control border-start-0" 
+          placeholder="Search name, resident code..." 
+          value="{{ search_query }}"
+        >
+      </div>
+
+      <!-- Filters Group -->
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <!-- Branch Filter -->
+        <select name="branch" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="all" {% if selected_branch == 'all' %}selected{% endif %}>All Branches</option>
+          {% for b in branches %}
+            <option value="{{ b.id }}" {% if selected_branch == (b.id|string) %}selected{% endif %}>
+              {{ b.branch_name }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <!-- Urgency Filter -->
+        <select name="urgency" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="ALL" {% if selected_urgency == 'ALL' %}selected{% endif %}>All Retention Periods</option>
+          <option value="normal" {% if selected_urgency in ['normal', 'safe'] %}selected{% endif %}>Safe (> 7 Days)</option>
+          <option value="approaching" {% if selected_urgency == 'approaching' %}selected{% endif %}>⚠️ Approaching Deadline (&le; 7 Days)</option>
+          <option value="expired" {% if selected_urgency == 'expired' %}selected{% endif %}>🚨 Eligible for Deletion (&gt; 30 Days)</option>
+        </select>
+
+        <!-- Leaving Date Range Filter -->
+        <div class="d-flex align-items-center gap-1">
+          <input 
+            type="date" 
+            name="from_date" 
+            class="form-control form-control-sm" 
+            style="width: 130px;"
+            value="{{ from_date }}" 
+            title="Leaving From Date"
+            onchange="this.form.submit()"
+          >
+          <span class="text-muted small">to</span>
+          <input 
+            type="date" 
+            name="to_date" 
+            class="form-control form-control-sm" 
+            style="width: 130px;"
+            value="{{ to_date }}" 
+            title="Leaving To Date"
+            onchange="this.form.submit()"
+          >
+        </div>
+
+        {% if search_query or selected_branch != 'all' or selected_urgency != 'ALL' or from_date or to_date %}
+          <a href="{{ url_for('residents.previous') }}" class="btn btn-sm btn-outline-secondary" title="Reset Filters">
+            <i class="bi bi-x-circle me-1"></i> Reset
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =========================================================================
+     PREVIOUS RESIDENTS DATA TABLE
+     ========================================================================= -->
+<div class="card-portal">
+  <div class="card-portal-body p-0">
+    <div class="table-responsive-portal">
+      <table class="table-portal">
+        <thead>
+          <tr>
+            <th>Resident ID</th>
+            <th>Resident Name & Photo</th>
+            <th>Branch</th>
+            <th>Admission Date</th>
+            <th>Leaving Date</th>
+            <th>Outstanding Balance</th>
+            <th>Retention Deadline</th>
+            <th>Remaining Period</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in residents %}
+            <tr>
+              <!-- Resident ID -->
+              <td>
+                <span class="font-monospace fw-bold text-dark">{{ r.resident_code }}</span>
+                <div class="small text-muted">{{ r.room_number }}</div>
+              </td>
+
+              <!-- Photograph & Name -->
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <img src="{{ r.photograph_path }}" alt="{{ r.full_name }}" class="avatar-thumb">
+                  <div>
+                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-semibold text-dark text-decoration-none">
+                      {{ r.full_name }}
+                    </a>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Branch -->
+              <td>
+                <span class="badge bg-light text-dark border">{{ r.branch_name }}</span>
+              </td>
+
+              <!-- Admission Date -->
+              <td>{{ r.admission_date|format_date }}</td>
+
+              <!-- Leaving Date -->
+              <td>
+                <span class="text-danger fw-semibold">{{ r.leaving_date|format_date }}</span>
+              </td>
+
+              <!-- Outstanding Balance -->
+              <td>
+                {% if r.total_financial_outstanding > 0 %}
+                  <span class="text-danger fw-bold">{{ r.total_financial_outstanding|currency }}</span>
+                  <div class="small text-danger">Unsettled</div>
+                {% else %}
+                  <span class="badge bg-success-subtle text-success border border-success-subtle">Zero Dues</span>
+                {% endif %}
+              </td>
+
+              <!-- Retention Deadline -->
+              <td>
+                <span class="fw-bold text-dark">{{ r.retention.deadline|format_date }}</span>
+              </td>
+
+              <!-- Remaining Retention Period Badge -->
+              <td>
+                {% if r.retention.urgency == 'expired' %}
+                  <span class="badge-status badge-expired" title="30-day retention has passed. Eligible for automated purge.">
+                    <i class="bi bi-exclamation-octagon-fill"></i> Eligible for Deletion
+                  </span>
+                  <div class="small text-danger mt-1 fw-semibold">Retention Expired ({{ r.retention.days_remaining|abs }}d ago)</div>
+                {% elif r.retention.urgency == 'approaching' %}
+                  <span class="badge-status badge-approaching" title="Approaching 30-day threshold">
+                    <i class="bi bi-exclamation-triangle-fill"></i> {{ r.retention.days_remaining }}d Left (Approaching)
+                  </span>
+                {% else %}
+                  <span class="badge-status badge-active">
+                    <i class="bi bi-check-circle"></i> {{ r.retention.days_remaining }} days remaining
+                  </span>
+                {% endif %}
+              </td>
+
+              <!-- Actions -->
+              <td class="text-end">
+                <div class="d-flex align-items-center justify-content-end gap-1">
+                  <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="btn btn-sm btn-outline-primary py-1 px-2" title="View Profile & Financial Ledger">
+                    <i class="bi bi-eye"></i> View
+                  </a>
+                  <button type="button" 
+                    class="btn btn-sm btn-outline-success py-1 px-2" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#reactivateModalPrevious" 
+                    data-resident-code="{{ r.resident_code }}" 
+                    data-resident-name="{{ r.full_name }}" 
+                    data-branch-id="{{ r.branch_id }}" 
+                    data-leaving-date="{{ r.leaving_date }}" 
+                    onclick="populateReactivateModalPrevious(this)" 
+                    title="Reactivate Returning Resident">
+                    <i class="bi bi-arrow-repeat"></i> Reactivate
+                  </button>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="9" class="text-center py-5 text-muted">
+                <i class="bi bi-folder2-open fs-1 d-block mb-2 text-secondary"></i>
+                No previous resident records found matching your filter criteria.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-portal-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div class="small text-muted">
+      Showing {{ residents|length }} previous resident record(s)
+    </div>
+    <div class="small text-muted">
+      <i class="bi bi-info-circle me-1"></i> Full profile and ledger access is strictly maintained throughout the 30-day grace window.
+    </div>
+  </div>
+</div>
+
+<!-- Reactivate Returning Resident Modal -->
+<div class="modal fade" id="reactivateModalPrevious" tabindex="-1" aria-labelledby="reactivateModalPreviousLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="reactivateModalPreviousLabel">
+          <i class="bi bi-arrow-repeat text-success me-2"></i>Reactivate Returning Resident
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="reactivateFormPrevious" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <p class="text-dark mb-3">
+            Reactivate <strong id="rmpResidentName">—</strong> (<code id="rmpResidentCode">—</code>) to <strong>ACTIVE</strong> status.
+          </p>
+
+          <div class="alert alert-info p-3 mb-3 small">
+            <strong class="d-block text-dark mb-1"><i class="bi bi-shield-check me-1"></i> Complete History Preservation</strong>
+            Previous stay and all past payment records remain permanently intact in the historical ledger.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">New Admission Date</label>
+            <input type="date" class="form-control" id="rmpNewAdmissionDate" name="new_admission_date" value="{{ today }}" required>
+            <div class="form-text">Sets the beginning of the resident's new active stay cycle.</div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">Branch Assignment</label>
+            <select class="form-select" id="rmpBranchSelect" name="branch_id" required>
+              {% for b in active_branches %}
+                <option value="{{ b.id }}">
+                  {{ b.branch_name }} ({{ b.branch_code }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Reactivation Notes</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="e.g. Re-enrolled for academic term 2026-27"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success btn-sm">Confirm Reactivation</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function populateReactivateModalPrevious(button) {
+  const code = button.getAttribute('data-resident-code');
+  const name = button.getAttribute('data-resident-name');
+  const branchId = button.getAttribute('data-branch-id');
+  const leavingDate = button.getAttribute('data-leaving-date');
+
+  document.getElementById('rmpResidentName').textContent = name;
+  document.getElementById('rmpResidentCode').textContent = code;
+
+  const branchSelect = document.getElementById('rmpBranchSelect');
+  if (branchSelect && branchId) {
+    branchSelect.value = branchId;
+  }
+
+  const dateInput = document.getElementById('rmpNewAdmissionDate');
+  if (leavingDate) {
+    dateInput.setAttribute('min', leavingDate);
+  }
+
+  document.getElementById('reactivateFormPrevious').setAttribute('action', `/residents/${code}/reactivate`);
+}
+</script>
+{% endblock %}
+

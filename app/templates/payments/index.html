@@ -1,0 +1,461 @@
+{% extends 'base.html' %}
+
+{% block title %}Payments & Collections{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-row justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="page-title">Payments & Collections</h1>
+    <p class="page-subtitle">Track security deposits, monthly rent ledgers, outstanding balances, and payment methods</p>
+  </div>
+  <div>
+    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#recordPaymentModalGlobal">
+      <i class="bi bi-plus-circle me-1"></i> Record New Payment
+    </button>
+  </div>
+</div>
+
+<!-- =========================================================================
+     FINANCIAL KPI SUMMARY CARDS (5 CARDS)
+     ========================================================================= -->
+<div class="stat-card-grid mb-4">
+  <!-- 1. Total Collections -->
+  <div class="stat-card card-primary">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Total Collected</span>
+      <div class="stat-card-icon"><i class="bi bi-cash-stack"></i></div>
+    </div>
+    <div class="stat-card-value text-dark">{{ stats.total_amount_collected|currency }}</div>
+    <div class="stat-card-subtext">Consolidated verified revenue</div>
+  </div>
+
+  <!-- 2. Total Rent Collected -->
+  <div class="stat-card card-info">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Rent Collected</span>
+      <div class="stat-card-icon"><i class="bi bi-cash"></i></div>
+    </div>
+    <div class="stat-card-value text-dark">{{ stats.total_rent_collected|currency }}</div>
+    <div class="stat-card-subtext">Admission & monthly rent</div>
+  </div>
+
+  <!-- 3. Deposits Collected -->
+  <div class="stat-card card-success">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Deposits Collected</span>
+      <div class="stat-card-icon"><i class="bi bi-shield-check"></i></div>
+    </div>
+    <div class="stat-card-value text-success">{{ stats.total_deposits_collected|currency }}</div>
+    <div class="stat-card-subtext">Refundable security held</div>
+  </div>
+
+  <!-- 4. Outstanding Rent -->
+  <div class="stat-card card-danger">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Outstanding Rent</span>
+      <div class="stat-card-icon"><i class="bi bi-clock-history"></i></div>
+    </div>
+    <div class="stat-card-value text-danger">{{ stats.pending_rent_amount|currency }}</div>
+    <div class="stat-card-subtext">{{ stats.pending_rent_count }} resident(s) due</div>
+  </div>
+
+  <!-- 5. Outstanding Deposits -->
+  <div class="stat-card card-warning">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Outstanding Deposits</span>
+      <div class="stat-card-icon"><i class="bi bi-hourglass-split"></i></div>
+    </div>
+    <div class="stat-card-value text-warning">{{ stats.pending_deposits_amount|currency }}</div>
+    <div class="stat-card-subtext">{{ stats.pending_deposits_count }} resident(s) incomplete</div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     FILTER & SEARCH TOOLBAR
+     ========================================================================= -->
+<div class="card-portal mb-3">
+  <div class="card-portal-body p-3">
+    <form method="GET" action="{{ url_for('payments.index') }}" class="filter-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <!-- Search Input -->
+      <div class="input-group" style="max-width: 280px;">
+        <span class="input-group-text bg-white border-end-0 text-muted">
+          <i class="bi bi-search"></i>
+        </span>
+        <input 
+          type="text" 
+          name="search" 
+          id="tableLiveSearch"
+          class="form-control border-start-0" 
+          placeholder="Search ID, resident, ref..." 
+          value="{{ search_query }}"
+        >
+      </div>
+
+      <!-- Filters Group -->
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <!-- Branch Filter -->
+        <select name="branch" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="all" {% if selected_branch == 'all' %}selected{% endif %}>All Branches</option>
+          {% for b in branches %}
+            <option value="{{ b.id }}" {% if selected_branch == (b.id|string) %}selected{% endif %}>
+              {{ b.branch_name }}
+            </option>
+          {% endfor %}
+        </select>
+
+        <!-- Payment Category Filter -->
+        <select name="type" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="ALL" {% if selected_type == 'ALL' %}selected{% endif %}>All Categories</option>
+          <option value="MONTHLY_RENT" {% if selected_type in ['MONTHLY_RENT', 'RENT'] %}selected{% endif %}>Monthly Rent</option>
+          <option value="ADMISSION_RENT" {% if selected_type == 'ADMISSION_RENT' %}selected{% endif %}>Admission Rent</option>
+          <option value="SECURITY_DEPOSIT" {% if selected_type == 'SECURITY_DEPOSIT' %}selected{% endif %}>Security Deposit</option>
+          <option value="OTHER_CHARGES" {% if selected_type == 'OTHER_CHARGES' %}selected{% endif %}>Other Charges</option>
+        </select>
+
+        <!-- Payment Status Filter -->
+        <select name="status" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="ALL" {% if selected_status == 'ALL' %}selected{% endif %}>All Statuses</option>
+          <option value="PAID" {% if selected_status == 'PAID' %}selected{% endif %}>Paid</option>
+          <option value="PARTIAL" {% if selected_status == 'PARTIAL' %}selected{% endif %}>Partial</option>
+          <option value="UNPAID" {% if selected_status in ['UNPAID', 'PENDING'] %}selected{% endif %}>Unpaid</option>
+        </select>
+
+        <!-- Date Range Filter -->
+        <div class="d-flex align-items-center gap-1">
+          <input 
+            type="date" 
+            name="from_date" 
+            class="form-control form-control-sm" 
+            style="width: 130px;"
+            value="{{ from_date }}" 
+            title="From Date"
+            onchange="this.form.submit()"
+          >
+          <span class="text-muted small">to</span>
+          <input 
+            type="date" 
+            name="to_date" 
+            class="form-control form-control-sm" 
+            style="width: 130px;"
+            value="{{ to_date }}" 
+            title="To Date"
+            onchange="this.form.submit()"
+          >
+        </div>
+
+        {% if search_query or selected_branch != 'all' or selected_type != 'ALL' or selected_status != 'ALL' or from_date or to_date %}
+          <a href="{{ url_for('payments.index') }}" class="btn btn-sm btn-outline-secondary" title="Reset Filters">
+            <i class="bi bi-x-circle me-1"></i> Reset
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =========================================================================
+     PAYMENTS TRANSACTION TABLE
+     ========================================================================= -->
+<div class="card-portal">
+  <div class="card-portal-body p-0">
+    <div class="table-responsive-portal">
+      <table class="table-portal">
+        <thead>
+          <tr>
+            <th>Payment ID</th>
+            <th>Resident Name & Code</th>
+            <th>Branch</th>
+            <th>Payment Type</th>
+            <th>Amount</th>
+            <th>Payment Date</th>
+            <th>Method & Reference</th>
+            <th>Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+            <tr>
+              <!-- Payment ID -->
+              <td>
+                <span class="font-monospace fw-bold text-dark">{{ p.payment_id }}</span>
+              </td>
+
+              <!-- Resident Name & Code -->
+              <td>
+                {% if p.resident_id and p.resident %}
+                  <a href="{{ url_for('residents.profile', resident_code=p.resident_code) }}" class="fw-semibold text-dark text-decoration-none">
+                    {{ p.resident_name }}
+                  </a>
+                {% else %}
+                  <span class="text-muted fst-italic">{{ p.resident_name }}</span>
+                {% endif %}
+                <div class="small text-muted font-monospace">{{ p.resident_code }}</div>
+              </td>
+
+              <!-- Branch -->
+              <td>
+                <span class="badge bg-light text-dark border">{{ p.branch_name }}</span>
+              </td>
+
+              <!-- Payment Type -->
+              <td>
+                {% if p.payment_type == 'SECURITY_DEPOSIT' %}
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                    Security Deposit
+                  </span>
+                {% elif p.payment_type == 'ADMISSION_RENT' %}
+                  <span class="badge bg-success-subtle text-success-emphasis border border-success-subtle">
+                    Admission Rent
+                  </span>
+                {% elif p.payment_type in ['MONTHLY_RENT', 'RENT'] %}
+                  <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                    Monthly Rent
+                  </span>
+                {% elif p.payment_type == 'OTHER_CHARGES' %}
+                  <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                    Other Charges
+                  </span>
+                {% else %}
+                  <span class="badge bg-light text-dark border">
+                    {{ p.payment_type }}
+                  </span>
+                {% endif %}
+              </td>
+
+              <!-- Amount -->
+              <td>
+                <span class="fw-bold text-dark">{{ p.amount|currency }}</span>
+              </td>
+
+              <!-- Payment Date -->
+              <td>{{ p.payment_date|format_date }}</td>
+
+              <!-- Method & Reference -->
+              <td>
+                <span class="badge bg-light text-secondary border">{{ p.payment_method or 'CASH' }}</span>
+                {% if p.transaction_reference %}
+                  <div class="small text-muted font-monospace">{{ p.transaction_reference }}</div>
+                {% endif %}
+              </td>
+
+              <!-- Status -->
+              <td>
+                {% if p.payment_status == 'PAID' %}
+                  <span class="badge-status badge-paid">Paid</span>
+                {% elif p.payment_status == 'PARTIAL' %}
+                  <span class="badge-status badge-partial">Partial</span>
+                {% else %}
+                  <span class="badge-status badge-unpaid">Unpaid</span>
+                {% endif %}
+              </td>
+
+              <!-- Actions -->
+              <td class="text-end">
+                <button 
+                  class="btn btn-sm btn-outline-primary py-1 px-2" 
+                  data-bs-toggle="modal" 
+                  data-bs-target="#receiptModal" 
+                  data-payment-id="{{ p.payment_id }}"
+                  data-resident="{{ p.resident_name }}"
+                  data-amount="{{ p.amount|currency }}"
+                  data-type="{{ p.payment_type }}"
+                  data-date="{{ p.payment_date|format_date }}"
+                  data-method="{{ p.payment_method }}"
+                  data-ref="{{ p.transaction_reference or 'N/A' }}"
+                  data-notes="{{ p.notes or 'No remarks provided' }}"
+                  onclick="populateReceiptModal(this)"
+                >
+                  <i class="bi bi-receipt"></i> Slip
+                </button>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="9" class="text-center py-5 text-muted">
+                <i class="bi bi-cash-stack fs-1 d-block mb-2 text-secondary"></i>
+                No payment transactions matched your search or filter options.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card-portal-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div class="small text-muted">
+      Showing {{ payments|length }} of {{ pagination.total }} record(s) (Page {{ pagination.page }} of {{ pagination.pages or 1 }})
+    </div>
+    {% if pagination.pages and pagination.pages > 1 %}
+      <nav aria-label="Payments pagination">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('payments.index', page=pagination.prev_num, branch=selected_branch, type=selected_type, status=selected_status, search=search_query, from_date=from_date, to_date=to_date) }}">
+              &laquo; Prev
+            </a>
+          </li>
+          {% for p_num in range(1, pagination.pages + 1) %}
+            <li class="page-item {% if p_num == pagination.page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('payments.index', page=p_num, branch=selected_branch, type=selected_type, status=selected_status, search=search_query, from_date=from_date, to_date=to_date) }}">
+                {{ p_num }}
+              </a>
+            </li>
+          {% endfor %}
+          <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('payments.index', page=pagination.next_num, branch=selected_branch, type=selected_type, status=selected_status, search=search_query, from_date=from_date, to_date=to_date) }}">
+              Next &raquo;
+            </a>
+          </li>
+        </ul>
+      </nav>
+    {% endif %}
+    <div class="small text-muted">
+      <i class="bi bi-lock me-1"></i> Ledger entries are immutable and audit-logged
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     MODALS
+     ========================================================================= -->
+
+<!-- Global Record Payment Modal -->
+<div class="modal fade" id="recordPaymentModalGlobal" tabindex="-1" aria-labelledby="recordPaymentGlobalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="recordPaymentGlobalLabel">
+          <i class="bi bi-cash-coin text-primary me-2"></i>Record New Payment
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form method="POST" action="{{ url_for('payments.index') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label required">Select Resident</label>
+            <select class="form-select" name="resident_id" required>
+              <option value="" disabled selected>Choose active resident...</option>
+              {% for res in active_residents %}
+                <option value="{{ res.id }}">
+                  {{ res.full_name }} ({{ res.resident_code }} - {{ res.branch_name }})
+                </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label required">Payment Type</label>
+              <select class="form-select" name="payment_type" required>
+                <option value="MONTHLY_RENT" selected>Monthly Rent</option>
+                <option value="ADMISSION_RENT">Admission Rent</option>
+                <option value="SECURITY_DEPOSIT">Security Deposit</option>
+                <option value="OTHER_CHARGES">Other Charges</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label required">Amount (₹)</label>
+              <input type="number" class="form-control" name="amount" placeholder="8500" step="any" min="1" required>
+            </div>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label required">Payment Method</label>
+              <select class="form-select" name="payment_method" required>
+                <option value="UPI" selected>UPI (GPay/PhonePe)</option>
+                <option value="BANK_TRANSFER">Bank Transfer</option>
+                <option value="CASH">Cash</option>
+                <option value="CHEQUE">Cheque</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label required">Payment Date</label>
+              <input type="date" class="form-control" name="payment_date" value="{{ today }}" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Transaction Reference / UTR</label>
+            <input type="text" class="form-control" name="transaction_reference" placeholder="e.g. UPI/4291880291">
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Notes / Remarks</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="e.g. Cleared full month rent balance"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Record Transaction</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Receipt Modal -->
+<div class="modal fade" id="receiptModal" tabindex="-1" aria-labelledby="receiptModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="receiptModalLabel">
+          <i class="bi bi-file-earmark-check text-success me-2"></i>Payment Receipt Slip
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4" id="printableReceipt">
+        <div class="text-center pb-3 border-bottom mb-3">
+          <h4 class="fw-bold text-dark mb-0">MIRACLE HOSTEL</h4>
+          <span class="text-muted small">Central Administrative Payment Voucher</span>
+        </div>
+        <dl class="row mb-0 small">
+          <dt class="col-5 text-muted">Receipt Ref:</dt>
+          <dd class="col-7 fw-bold font-monospace text-dark" id="receiptId">—</dd>
+
+          <dt class="col-5 text-muted">Resident Name:</dt>
+          <dd class="col-7 fw-bold text-dark" id="receiptResident">—</dd>
+
+          <dt class="col-5 text-muted">Payment Category:</dt>
+          <dd class="col-7 text-dark" id="receiptType">—</dd>
+
+          <dt class="col-5 text-muted">Amount Paid:</dt>
+          <dd class="col-7 fw-bold text-success fs-6" id="receiptAmount">—</dd>
+
+          <dt class="col-5 text-muted">Payment Date:</dt>
+          <dd class="col-7 text-dark" id="receiptDate">—</dd>
+
+          <dt class="col-5 text-muted">Method / UTR:</dt>
+          <dd class="col-7 text-dark" id="receiptRef">—</dd>
+
+          <dt class="col-5 text-muted">Remarks:</dt>
+          <dd class="col-7 text-muted" id="receiptNotes">—</dd>
+        </dl>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print()">
+          <i class="bi bi-printer me-1"></i> Print Voucher
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function populateReceiptModal(button) {
+  document.getElementById('receiptId').textContent = button.getAttribute('data-payment-id');
+  document.getElementById('receiptResident').textContent = button.getAttribute('data-resident');
+  document.getElementById('receiptAmount').textContent = button.getAttribute('data-amount');
+  document.getElementById('receiptType').textContent = button.getAttribute('data-type');
+  document.getElementById('receiptDate').textContent = button.getAttribute('data-date');
+  document.getElementById('receiptRef').textContent = `${button.getAttribute('data-method')} - ${button.getAttribute('data-ref')}`;
+  document.getElementById('receiptNotes').textContent = button.getAttribute('data-notes');
+}
+</script>
+{% endblock %}
+

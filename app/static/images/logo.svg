@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 54" width="240" height="54" fill="none">
+  <!-- Modern Clean Miracle Hostel Logo -->
+  <rect x="2" y="5" width="44" height="44" rx="10" fill="#243B53"/>
+  <path d="M12 37V22L24 13L36 22V37H30V27H18V37H12Z" fill="#FFFFFF"/>
+  <rect x="21" y="29" width="6" height="8" rx="1" fill="#16A34A"/>
+  <!-- Typography -->
+  <text x="56" y="27" font-family="'Inter', -apple-system, BlinkMacSystemFont, sans-serif" font-size="20" font-weight="700" fill="#102A43" letter-spacing="-0.5">MIRACLE</text>
+  <text x="56" y="42" font-family="'Inter', -apple-system, BlinkMacSystemFont, sans-serif" font-size="11" font-weight="600" fill="#64748B" letter-spacing="2">HOSTEL PORTAL</text>
+</svg>
+

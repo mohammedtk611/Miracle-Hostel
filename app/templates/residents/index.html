@@ -1,0 +1,905 @@
+{% extends 'base.html' %}
+
+{% block title %}Resident Directory{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-row justify-content-between align-items-center">
+  <div>
+    <div class="d-flex align-items-center gap-2">
+      <h1 class="page-title">Resident Directory</h1>
+      <span class="badge bg-secondary-subtle text-secondary border">{{ total_count }} Residents</span>
+    </div>
+    <p class="page-subtitle">Manage residents across all branches, admission tracking, and payment statuses</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('residents.add') }}" class="btn btn-primary">
+      <i class="bi bi-person-plus me-1"></i> Add New Resident
+    </a>
+  </div>
+</div>
+
+<!-- =========================================================================
+     FILTER & SEARCH TOOLBAR
+     ========================================================================= -->
+<div class="card-portal mb-3">
+  <div class="card-portal-body p-3">
+    <form method="GET" action="{{ url_for('residents.index') }}" class="filter-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <!-- Search Input -->
+      <div class="input-group" style="max-width: 320px;">
+        <span class="input-group-text bg-white border-end-0 text-muted">
+          <i class="bi bi-search"></i>
+        </span>
+        <input 
+          type="text" 
+          name="search" 
+          id="tableLiveSearch"
+          class="form-control border-start-0" 
+          placeholder="Search name, ID, room..." 
+          value="{{ search_query }}"
+        >
+      </div>
+
+      <!-- Filters Group -->
+      <div class="d-flex flex-wrap align-items-center gap-2">
+        <!-- Branch Filter -->
+        <select name="branch" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="all" {% if selected_branch == 'all' %}selected{% endif %}>All Branches</option>
+          {% for b in branches %}
+            <option value="{{ b.id }}" {% if selected_branch == (b.id|string) %}selected{% endif %}>
+              {{ b.branch_name }} {% if not b.is_active %}(Inactive){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+
+        <!-- Status Filter -->
+        <select name="status" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="ALL" {% if selected_status == 'ALL' %}selected{% endif %}>All Statuses</option>
+          <option value="ACTIVE" {% if selected_status == 'ACTIVE' %}selected{% endif %}>Active Only</option>
+          <option value="LEFT" {% if selected_status == 'LEFT' %}selected{% endif %}>Left (Previous)</option>
+        </select>
+
+        <!-- Deposit Status Filter -->
+        <select name="deposit_status" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="ALL" {% if selected_deposit_status == 'ALL' %}selected{% endif %}>Deposit: All</option>
+          <option value="PAID" {% if selected_deposit_status == 'PAID' %}selected{% endif %}>Deposit: Paid</option>
+          <option value="PENDING" {% if selected_deposit_status == 'PENDING' %}selected{% endif %}>Deposit: Pending</option>
+          <option value="PARTIAL" {% if selected_deposit_status == 'PARTIAL' %}selected{% endif %}>Deposit: Partial</option>
+        </select>
+
+        <!-- Rent Status Filter -->
+        <select name="rent_status" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+          <option value="ALL" {% if selected_rent_status == 'ALL' %}selected{% endif %}>Rent: All</option>
+          <option value="PAID" {% if selected_rent_status == 'PAID' %}selected{% endif %}>Rent: Paid</option>
+          <option value="PENDING" {% if selected_rent_status == 'PENDING' %}selected{% endif %}>Rent: Pending</option>
+          <option value="PARTIAL" {% if selected_rent_status == 'PARTIAL' %}selected{% endif %}>Rent: Partial</option>
+        </select>
+
+        {% if search_query or selected_branch != 'all' or selected_status != 'ALL' or selected_deposit_status != 'ALL' or selected_rent_status != 'ALL' %}
+          <a href="{{ url_for('residents.index') }}" class="btn btn-sm btn-outline-secondary" title="Reset Filters">
+            <i class="bi bi-x-circle me-1"></i> Reset
+          </a>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- =========================================================================
+     RESIDENTS DATA TABLE
+     ========================================================================= -->
+<div class="card-portal">
+  <div class="card-portal-body p-0">
+    <div class="table-responsive-portal">
+      <table class="table-portal">
+        <thead>
+          <tr>
+            <th>Resident ID</th>
+            <th>Resident Photo & Name</th>
+            <th>Branch</th>
+            <th>Admission Date</th>
+            <th>Deposit Status</th>
+            <th>Rent Status</th>
+            <th>Resident Status</th>
+            <th class="text-end">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in residents %}
+            <tr>
+              <!-- Resident ID -->
+              <td>
+                <span class="font-monospace fw-bold text-dark">{{ r.resident_code }}</span>
+                <div class="small text-muted">{{ r.room_number }}</div>
+              </td>
+
+              <!-- Photograph & Name -->
+              <td>
+                <div class="d-flex align-items-center gap-2">
+                  <img src="{{ r.photograph_path }}" alt="{{ r.full_name }}" class="avatar-thumb">
+                  <div>
+                    <a href="{{ url_for('residents.profile', resident_code=r.resident_code) }}" class="fw-semibold text-dark text-decoration-none hover-primary">
+                      {{ r.full_name }}
+                    </a>
+                    <div class="small text-muted">
+                      {{ r.room_number }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+
+              <!-- Branch -->
+              <td>
+                <span class="badge bg-light text-dark border">{{ r.branch_name }}</span>
+              </td>
+
+              <!-- Admission Date -->
+              <td>
+                <span>{{ r.admission_date|format_date }}</span>
+              </td>
+
+              <!-- Deposit Status -->
+              <td>
+                <div id="deposit-status-{{ r.id }}" class="quick-status-cell">
+                  {% if r.deposit_status == 'PAID' %}
+                    <button type="button" 
+                      class="badge-status badge-btn badge-paid cursor-pointer" 
+                      data-quick-payment 
+                      data-resident-id="{{ r.id }}" 
+                      data-resident-name="{{ r.full_name }}" 
+                      data-resident-code="{{ r.resident_code }}" 
+                      data-payment-type="SECURITY_DEPOSIT" 
+                      data-type-label="Security Deposit" 
+                      data-current-status="PAID" 
+                      data-current-amount="{{ r.security_deposit_amount }}" 
+                      title="Click to update Security Deposit status">
+                      Paid ({{ r.security_deposit|currency }}) <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                    </button>
+                  {% elif r.deposit_status == 'PARTIAL' %}
+                    <button type="button" 
+                      class="badge-status badge-btn badge-partial cursor-pointer" 
+                      data-quick-payment 
+                      data-resident-id="{{ r.id }}" 
+                      data-resident-name="{{ r.full_name }}" 
+                      data-resident-code="{{ r.resident_code }}" 
+                      data-payment-type="SECURITY_DEPOSIT" 
+                      data-type-label="Security Deposit" 
+                      data-current-status="PARTIAL" 
+                      data-current-amount="{{ r.security_deposit_amount }}" 
+                      title="Click to update Security Deposit status">
+                      Partial <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                    </button>
+                  {% else %}
+                    <button type="button" 
+                      class="badge-status badge-btn badge-unpaid cursor-pointer" 
+                      data-quick-payment 
+                      data-resident-id="{{ r.id }}" 
+                      data-resident-name="{{ r.full_name }}" 
+                      data-resident-code="{{ r.resident_code }}" 
+                      data-payment-type="SECURITY_DEPOSIT" 
+                      data-type-label="Security Deposit" 
+                      data-current-status="UNPAID" 
+                      data-current-amount="{{ r.security_deposit_amount }}" 
+                      title="Click to update Security Deposit status">
+                      Unpaid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                    </button>
+                  {% endif %}
+                </div>
+              </td>
+
+              <!-- Rent Status -->
+              <td>
+                <div id="rent-status-{{ r.id }}" class="quick-status-cell">
+                  {% if r.rent_status == 'PAID' %}
+                    <button type="button" 
+                      class="badge-status badge-btn badge-paid cursor-pointer" 
+                      data-quick-payment 
+                      data-resident-id="{{ r.id }}" 
+                      data-resident-name="{{ r.full_name }}" 
+                      data-resident-code="{{ r.resident_code }}" 
+                      data-payment-type="RENT" 
+                      data-type-label="Monthly Rent" 
+                      data-current-status="PAID" 
+                      data-current-amount="{{ r.outstanding_rent }}" 
+                      title="Click to update Monthly Rent status">
+                      Paid <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                    </button>
+                  {% elif r.rent_status == 'PARTIAL' %}
+                    <button type="button" 
+                      class="badge-status badge-btn badge-partial cursor-pointer" 
+                      data-quick-payment 
+                      data-resident-id="{{ r.id }}" 
+                      data-resident-name="{{ r.full_name }}" 
+                      data-resident-code="{{ r.resident_code }}" 
+                      data-payment-type="RENT" 
+                      data-type-label="Monthly Rent" 
+                      data-current-status="PARTIAL" 
+                      data-current-amount="{{ r.outstanding_rent }}" 
+                      title="Click to update Monthly Rent status">
+                      Partial{% if r.outstanding_rent > 0 %} (Due: {{ r.outstanding_rent|currency }}){% endif %} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                    </button>
+                  {% else %}
+                    <button type="button" 
+                      class="badge-status badge-btn badge-unpaid cursor-pointer" 
+                      data-quick-payment 
+                      data-resident-id="{{ r.id }}" 
+                      data-resident-name="{{ r.full_name }}" 
+                      data-resident-code="{{ r.resident_code }}" 
+                      data-payment-type="RENT" 
+                      data-type-label="Monthly Rent" 
+                      data-current-status="UNPAID" 
+                      data-current-amount="{{ r.outstanding_rent }}" 
+                      title="Click to update Monthly Rent status">
+                      Unpaid{% if r.outstanding_rent > 0 %} (Due: {{ r.outstanding_rent|currency }}){% endif %} <i class="bi bi-pencil-fill ms-1 opacity-50" style="font-size: 0.65rem;"></i>
+                    </button>
+                  {% endif %}
+                </div>
+              </td>
+
+              <!-- Resident Status -->
+              <td>
+                {% if r.resident_status == 'ACTIVE' %}
+                  <span class="badge-status badge-active">Active</span>
+                {% else %}
+                  <span class="badge-status badge-left">Left</span>
+                {% endif %}
+              </td>
+
+              <!-- Actions -->
+              <td class="text-end">
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle py-1 px-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    Actions
+                  </button>
+                  <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                    <li>
+                      <a class="dropdown-item" href="{{ url_for('residents.profile', resident_code=r.resident_code) }}">
+                        <i class="bi bi-person-lines-fill me-2 text-primary"></i> View Full Profile
+                      </a>
+                    </li>
+                    <li>
+                      <a class="dropdown-item" href="{{ url_for('payments.index', search=r.resident_code) }}">
+                        <i class="bi bi-cash me-2 text-success"></i> Payment History
+                      </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                      <a class="dropdown-item" href="{{ url_for('residents.profile', resident_code=r.resident_code) }}">
+                        <i class="bi bi-pencil me-2 text-secondary"></i> Edit Information
+                      </a>
+                    </li>
+                    {% if r.resident_status == 'ACTIVE' %}
+                      <li>
+                        <button type="button" 
+                          class="dropdown-item text-danger" 
+                          data-bs-toggle="modal" 
+                          data-bs-target="#markLeftModalDirectory" 
+                          data-resident-code="{{ r.resident_code }}"
+                          data-resident-name="{{ r.full_name }}"
+                          data-branch-name="{{ r.branch_name }}"
+                          data-outstanding-rent="{{ r.outstanding_rent }}"
+                          data-outstanding-deposit="{{ r.deposit_outstanding }}"
+                          data-outstanding-total="{{ r.total_financial_outstanding }}"
+                          data-admission-date="{{ r.admission_date }}"
+                          onclick="populateMarkLeftModalDirectory(this)">
+                          <i class="bi bi-door-open me-2 text-danger"></i> Mark as Left
+                        </button>
+                      </li>
+                    {% endif %}
+                  </ul>
+                </div>
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="8" class="text-center py-5 text-muted">
+                <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                No residents found matching your active filter criteria.
+                <div class="mt-2">
+                  <a href="{{ url_for('residents.index') }}" class="btn btn-sm btn-outline-primary">
+                    Clear All Filters
+                  </a>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Table Pagination Footer -->
+  <div class="card-portal-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+    <div class="small text-muted">
+      {% if pagination and pagination.total > 0 %}
+        Showing {{ (pagination.page - 1) * pagination.per_page + 1 }} to {{ [pagination.page * pagination.per_page, pagination.total]|min }} of {{ pagination.total }} entries
+      {% else %}
+        Showing 0 entries
+      {% endif %}
+    </div>
+    {% if pagination and pagination.pages > 1 %}
+      <nav aria-label="Residents table pagination">
+        <ul class="pagination pagination-sm mb-0">
+          <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('residents.index', page=pagination.prev_num, search=search_query, branch=selected_branch, status=selected_status) }}">Previous</a>
+          </li>
+          {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+              <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                <a class="page-link" href="{{ url_for('residents.index', page=p, search=search_query, branch=selected_branch, status=selected_status) }}">{{ p }}</a>
+              </li>
+            {% else %}
+              <li class="page-item disabled"><span class="page-link">&hellip;</span></li>
+            {% endif %}
+          {% endfor %}
+          <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+            <a class="page-link" href="{{ url_for('residents.index', page=pagination.next_num, search=search_query, branch=selected_branch, status=selected_status) }}">Next</a>
+          </li>
+        </ul>
+      </nav>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Edit Resident Modal (Interactive UI Demonstration) -->
+<div class="modal fade" id="editResidentDemoModal" tabindex="-1" aria-labelledby="editResidentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editResidentModalLabel">
+          <i class="bi bi-pencil-square text-primary me-2"></i>Edit Resident Details
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info py-2 small mb-3">
+          <i class="bi bi-info-circle me-1"></i> Phase 1 & 2 UI demonstration. Updating resident records will be fully persisted in PostgreSQL in Phase 3.
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Resident Name</label>
+          <input type="text" class="form-control" id="modalResidentName" value="Resident Details">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Assigned Room</label>
+          <input type="text" class="form-control" value="Room 204 - Bed A">
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Contact Phone</label>
+          <input type="text" class="form-control" value="+91 98765 43210">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary btn-sm" data-bs-dismiss="modal" onclick="alert('Resident profile updated (UI demonstration mode).')">
+          Save Changes
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mark as Left Directory Modal -->
+<div class="modal fade" id="markLeftModalDirectory" tabindex="-1" aria-labelledby="markLeftModalDirectoryLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="markLeftModalDirectoryLabel">
+          <i class="bi bi-door-open text-danger me-2"></i>Resident Departure Confirmation
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="markLeftFormDirectory" method="POST" action="">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="modal-body">
+          <p class="text-dark mb-3">
+            Confirm departure for <strong id="mldResidentName">—</strong> (<code id="mldResidentCode">—</code> &bull; <span id="mldBranchName">—</span>).
+          </p>
+
+          <!-- Outstanding Balances Display & Follow-up Notice -->
+          <div class="card p-3 mb-3 bg-light border">
+            <h6 class="fw-bold text-dark mb-2 small text-uppercase">Account Balances at Departure</h6>
+            <div class="row g-2 small">
+              <div class="col-6">
+                <span class="text-muted d-block">Outstanding Rent:</span>
+                <strong id="mldOutstandingRent" class="text-dark">₹ 0</strong>
+              </div>
+              <div class="col-6">
+                <span class="text-muted d-block">Deposit Outstanding:</span>
+                <strong id="mldOutstandingDeposit" class="text-dark">₹ 0</strong>
+              </div>
+            </div>
+            <div id="mldDuesAlert" class="alert alert-danger p-2 mt-2 mb-0 small d-none">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              <strong>Unsettled Balance: <span id="mldTotalDues">₹ 0</span></strong>.
+              Unpaid amounts remain recorded for administrative follow-up. Departure will proceed.
+            </div>
+            <div id="mldNoDuesAlert" class="alert alert-success p-2 mt-2 mb-0 small d-none">
+              <i class="bi bi-check-circle-fill me-1"></i> All dues and deposits fully settled.
+            </div>
+          </div>
+
+          <div class="security-notice mb-3">
+            <strong class="d-block text-dark">30-Day Retention Policy Notice</strong>
+            Status will transition to <strong>LEFT</strong> and record will move to <em>Previous Residents</em>. Information remains accessible throughout the 30-day retention grace period.
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label required">Actual Departure Date</label>
+            <input type="date" class="form-control" id="mldLeavingDate" name="leaving_date" value="{{ today }}" required>
+            <div class="form-text">Cannot be earlier than admission date.</div>
+          </div>
+
+          <div class="mb-2">
+            <label class="form-label">Departure Notes / Remarks</label>
+            <textarea class="form-control" name="notes" rows="2" placeholder="e.g. End of tenure, room handed over"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-danger btn-sm">Confirm Departure</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<!-- Quick Payment Status Update Modal -->
+<div class="modal fade" id="quickPaymentModal" tabindex="-1" aria-labelledby="quickPaymentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-lg border-0">
+      <div class="modal-header bg-light py-3 border-bottom">
+        <div>
+          <h5 class="modal-title h6 fw-bold mb-0 text-dark" id="quickPaymentModalLabel">
+            <i class="bi bi-cash-stack text-primary me-2"></i>Quick Payment Status
+          </h5>
+          <div class="small text-muted mt-1" id="qpResidentSubtitle">
+            Resident details
+          </div>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+
+      <form id="quickPaymentForm" novalidate>
+        <div class="modal-body p-4">
+          <!-- Feedback Alert -->
+          <div id="qpAlertBox" class="alert d-none py-2 px-3 small mb-3"></div>
+
+          <!-- Current Status Banner -->
+          <div class="d-flex align-items-center justify-content-between p-2 mb-3 bg-light rounded border">
+            <span class="small fw-semibold text-muted">Current Status</span>
+            <span id="qpCurrentStatusBadge" class="badge-status badge-secondary">Pending</span>
+          </div>
+
+          <!-- Target Status Radio Selection Cards -->
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-dark mb-2">Change Status To <span class="text-danger">*</span></label>
+            <div class="row g-2">
+              <div class="col-4">
+                <label class="status-radio-card w-100 justify-content-center" id="cardStatusPaid">
+                  <input type="radio" name="qp_target_status" value="PAID" class="form-check-input mt-0 me-1" checked>
+                  <span class="fw-semibold text-success small">PAID</span>
+                </label>
+              </div>
+              <div class="col-4">
+                <label class="status-radio-card w-100 justify-content-center" id="cardStatusPartial">
+                  <input type="radio" name="qp_target_status" value="PARTIAL" class="form-check-input mt-0 me-1">
+                  <span class="fw-semibold text-warning-emphasis small">PARTIAL</span>
+                </label>
+              </div>
+              <div class="col-4">
+                <label class="status-radio-card w-100 justify-content-center" id="cardStatusUnpaid">
+                  <input type="radio" name="qp_target_status" value="UNPAID" class="form-check-input mt-0 me-1">
+                  <span class="fw-semibold text-danger small">UNPAID</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Dynamic Panel: PAID -->
+          <div id="panelStatusPaid" class="status-panel">
+            <div class="row g-2 mb-3">
+              <div class="col-sm-6">
+                <label class="form-label small fw-semibold">Amount Received (₹) <span class="text-danger">*</span></label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" step="0.01" min="0.01" class="form-control" id="qpPaidAmount" placeholder="e.g. 8500.00" required>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label small fw-semibold">Payment Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control form-control-sm" id="qpPaidDate" required>
+              </div>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-sm-6">
+                <label class="form-label small fw-semibold">Payment Method</label>
+                <select class="form-select form-select-sm" id="qpPaidMethod">
+                  <option value="UPI">UPI / QR Code</option>
+                  <option value="CASH">Cash</option>
+                  <option value="BANK_TRANSFER">Bank Transfer (NEFT/IMPS)</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label small fw-semibold">Transaction Ref (Optional)</label>
+                <input type="text" class="form-control form-control-sm" id="qpPaidTxRef" placeholder="e.g. UPI/12345678">
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small fw-semibold">Notes / Remarks (Optional)</label>
+              <input type="text" class="form-control form-control-sm" id="qpPaidNotes" placeholder="Optional notes for transaction ledger">
+            </div>
+          </div>
+
+          <!-- Dynamic Panel: PARTIAL -->
+          <div id="panelStatusPartial" class="status-panel d-none">
+            <div class="row g-2 mb-2">
+              <div class="col-sm-6">
+                <label class="form-label small fw-semibold">Total Due (₹)</label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" step="0.01" min="0.01" class="form-control" id="qpPartialTotalExpected" placeholder="Total expected">
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label small fw-semibold">Amount Received (₹) <span class="text-danger">*</span></label>
+                <div class="input-group input-group-sm">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" step="0.01" min="0.01" class="form-control" id="qpPartialAmount" placeholder="Amount paid now">
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Calculated Balance -->
+            <div class="alert alert-warning py-2 px-3 small d-flex justify-content-between align-items-center mb-3">
+              <span><i class="bi bi-calculator me-1"></i> Outstanding Balance:</span>
+              <strong class="fs-6" id="qpPartialBalanceDisplay">₹ 0.00</strong>
+            </div>
+
+            <div class="row g-2 mb-3">
+              <div class="col-sm-6">
+                <label class="form-label small fw-semibold">Payment Date <span class="text-danger">*</span></label>
+                <input type="date" class="form-control form-control-sm" id="qpPartialDate">
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label small fw-semibold">Payment Method</label>
+                <select class="form-select form-select-sm" id="qpPartialMethod">
+                  <option value="UPI">UPI / QR Code</option>
+                  <option value="CASH">Cash</option>
+                  <option value="BANK_TRANSFER">Bank Transfer (NEFT/IMPS)</option>
+                  <option value="CHEQUE">Cheque</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="mb-2">
+              <label class="form-label small fw-semibold">Transaction Ref & Notes (Optional)</label>
+              <input type="text" class="form-control form-control-sm mb-2" id="qpPartialTxRef" placeholder="e.g. UPI/12345678">
+              <input type="text" class="form-control form-control-sm" id="qpPartialNotes" placeholder="e.g. Balance promised by end of month">
+            </div>
+          </div>
+
+          <!-- Dynamic Panel: UNPAID -->
+          <div id="panelStatusUnpaid" class="status-panel d-none">
+            <div class="alert alert-danger py-2 px-3 small mb-3">
+              <i class="bi bi-exclamation-triangle-fill me-1"></i>
+              <strong>Marking as UNPAID:</strong> No fictitious payment transaction is recorded. All previously saved transactions remain safely intact in the database ledger.
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-semibold">Reason / Note (Optional)</label>
+              <input type="text" class="form-control form-control-sm" id="qpUnpaidNotes" placeholder="e.g. Payment due for current cycle / invoice pending">
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer bg-light py-2 px-4 border-top">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm px-3" id="qpSubmitBtn">
+            <span class="spinner-border spinner-border-sm me-1 d-none" id="qpSubmitSpinner" role="status" aria-hidden="true"></span>
+            <span id="qpSubmitBtnText"><i class="bi bi-check-lg me-1"></i> Confirm & Update</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const modalEl = document.getElementById('quickPaymentModal');
+  if (!modalEl) return;
+
+  const bsModal = new bootstrap.Modal(modalEl);
+  const qpForm = document.getElementById('quickPaymentForm');
+  const alertBox = document.getElementById('qpAlertBox');
+  const subtitle = document.getElementById('qpResidentSubtitle');
+  const statusBadge = document.getElementById('qpCurrentStatusBadge');
+  const submitBtn = document.getElementById('qpSubmitBtn');
+  const submitSpinner = document.getElementById('qpSubmitSpinner');
+  const submitText = document.getElementById('qpSubmitBtnText');
+
+  // Panels
+  const panelPaid = document.getElementById('panelStatusPaid');
+  const panelPartial = document.getElementById('panelStatusPartial');
+  const panelUnpaid = document.getElementById('panelStatusUnpaid');
+
+  // Card wrappers
+  const cardPaid = document.getElementById('cardStatusPaid');
+  const cardPartial = document.getElementById('cardStatusPartial');
+  const cardUnpaid = document.getElementById('cardStatusUnpaid');
+
+  // Partial calculator inputs
+  const partialTotal = document.getElementById('qpPartialTotalExpected');
+  const partialAmount = document.getElementById('qpPartialAmount');
+  const partialBalance = document.getElementById('qpPartialBalanceDisplay');
+
+  let activeResidentData = {};
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('qpPaidDate').value = todayStr;
+  document.getElementById('qpPartialDate').value = todayStr;
+
+  function setStatusPanel(targetStatus) {
+    panelPaid.classList.add('d-none');
+    panelPartial.classList.add('d-none');
+    panelUnpaid.classList.add('d-none');
+
+    cardPaid.classList.remove('active-paid');
+    cardPartial.classList.remove('active-partial');
+    cardUnpaid.classList.remove('active-unpaid');
+
+    if (targetStatus === 'PAID') {
+      panelPaid.classList.remove('d-none');
+      cardPaid.classList.add('active-paid');
+    } else if (targetStatus === 'PARTIAL') {
+      panelPartial.classList.remove('d-none');
+      cardPartial.classList.add('active-partial');
+      calculatePartialBalance();
+    } else if (targetStatus === 'UNPAID') {
+      panelUnpaid.classList.remove('d-none');
+      cardUnpaid.classList.add('active-unpaid');
+    }
+  }
+
+  function calculatePartialBalance() {
+    const total = parseFloat(partialTotal.value) || 0;
+    const rec = parseFloat(partialAmount.value) || 0;
+    const balance = Math.max(0, total - rec);
+    partialBalance.textContent = '₹ ' + balance.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  partialTotal.addEventListener('input', calculatePartialBalance);
+  partialAmount.addEventListener('input', calculatePartialBalance);
+
+  document.querySelectorAll('input[name="qp_target_status"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      setStatusPanel(this.value);
+    });
+  });
+
+  // Event delegation for clicking quick payment buttons
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('[data-quick-payment]');
+    if (!btn) return;
+
+    activeResidentData = {
+      residentId: btn.getAttribute('data-resident-id'),
+      residentName: btn.getAttribute('data-resident-name'),
+      residentCode: btn.getAttribute('data-resident-code'),
+      paymentType: btn.getAttribute('data-payment-type'),
+      typeLabel: btn.getAttribute('data-type-label'),
+      currentStatus: btn.getAttribute('data-current-status'),
+      currentAmount: parseFloat(btn.getAttribute('data-current-amount')) || 0
+    };
+
+    subtitle.innerHTML = `<strong>${activeResidentData.residentName}</strong> (${activeResidentData.residentCode}) &bull; <span class="badge bg-secondary">${activeResidentData.typeLabel}</span>`;
+
+    // Render current status badge in dialog
+    let currClass = 'badge-unpaid';
+    let currText = 'Unpaid';
+    if (activeResidentData.currentStatus === 'PAID') {
+      currClass = 'badge-paid';
+      currText = 'Paid';
+    } else if (activeResidentData.currentStatus === 'PARTIAL') {
+      currClass = 'badge-partial';
+      currText = 'Partial';
+    }
+    statusBadge.className = `badge-status ${currClass}`;
+    statusBadge.textContent = currText;
+
+    // Reset alert
+    alertBox.className = 'alert d-none py-2 px-3 small mb-3';
+    alertBox.textContent = '';
+
+    // Initialize inputs
+    const defaultAmount = activeResidentData.currentAmount > 0 ? activeResidentData.currentAmount : 8500.00;
+    document.getElementById('qpPaidAmount').value = defaultAmount;
+    partialTotal.value = defaultAmount;
+    partialAmount.value = (defaultAmount / 2).toFixed(2);
+    document.getElementById('qpPaidNotes').value = '';
+    document.getElementById('qpPartialNotes').value = '';
+    document.getElementById('qpUnpaidNotes').value = '';
+
+    // Select default radio: if currently unpaid, default to PAID; if currently paid, default to UNPAID or PARTIAL
+    const targetStatus = activeResidentData.currentStatus === 'PAID' ? 'PARTIAL' : 'PAID';
+    const radio = document.querySelector(`input[name="qp_target_status"][value="${targetStatus}"]`) || document.querySelector('input[name="qp_target_status"][value="PAID"]');
+    if (radio) {
+      radio.checked = true;
+      setStatusPanel(targetStatus);
+    }
+
+    bsModal.show();
+  });
+
+  // Submit Handler
+  qpForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    const selectedRadio = document.querySelector('input[name="qp_target_status"]:checked');
+    if (!selectedRadio) return;
+    const status = selectedRadio.value;
+
+    let payload = {
+      resident_id: activeResidentData.residentId,
+      payment_type: activeResidentData.paymentType,
+      status: status
+    };
+
+    if (status === 'PAID') {
+      const amt = parseFloat(document.getElementById('qpPaidAmount').value);
+      if (isNaN(amt) || amt <= 0) {
+        alertBox.className = 'alert alert-danger py-2 px-3 small mb-3';
+        alertBox.textContent = 'Please enter a valid amount greater than zero.';
+        return;
+      }
+      payload.amount = amt;
+      payload.payment_date = document.getElementById('qpPaidDate').value;
+      payload.payment_method = document.getElementById('qpPaidMethod').value;
+      payload.transaction_reference = document.getElementById('qpPaidTxRef').value;
+      payload.notes = document.getElementById('qpPaidNotes').value;
+    } else if (status === 'PARTIAL') {
+      const amt = parseFloat(partialAmount.value);
+      if (isNaN(amt) || amt <= 0) {
+        alertBox.className = 'alert alert-danger py-2 px-3 small mb-3';
+        alertBox.textContent = 'Please enter a valid partial amount greater than zero.';
+        return;
+      }
+      payload.amount = amt;
+      payload.total_expected = parseFloat(partialTotal.value) || amt;
+      payload.payment_date = document.getElementById('qpPartialDate').value;
+      payload.payment_method = document.getElementById('qpPartialMethod').value;
+      payload.transaction_reference = document.getElementById('qpPartialTxRef').value;
+      payload.notes = document.getElementById('qpPartialNotes').value;
+    } else if (status === 'UNPAID') {
+      payload.notes = document.getElementById('qpUnpaidNotes').value;
+    }
+
+    // Prevent duplicate submission
+    submitBtn.disabled = true;
+    submitSpinner.classList.remove('d-none');
+    submitText.textContent = 'Updating...';
+
+    // Get CSRF Token
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+    fetch('/residents/quick-payment', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': csrfToken
+      },
+      body: JSON.stringify(payload)
+    })
+    .then(function (response) {
+      return response.json().then(function (data) {
+        return { status: response.status, ok: response.ok, data: data };
+      });
+    })
+    .then(function (res) {
+      if (!res.ok || !res.data.success) {
+        throw new Error(res.data.message || 'Payment status update failed.');
+      }
+
+      // Update Table Cell in-place
+      const cellId = activeResidentData.paymentType === 'SECURITY_DEPOSIT' 
+        ? `deposit-status-${activeResidentData.residentId}` 
+        : `rent-status-${activeResidentData.residentId}`;
+      const cell = document.getElementById(cellId);
+      if (cell && res.data.badge_html) {
+        cell.innerHTML = res.data.badge_html;
+        cell.classList.remove('cell-updated-flash');
+        void cell.offsetWidth; // Force reflow
+        cell.classList.add('cell-updated-flash');
+      }
+
+      // Hide modal
+      bsModal.hide();
+
+      // Show toast
+      showPortalToast(res.data.message, 'success');
+    })
+    .catch(function (err) {
+      alertBox.className = 'alert alert-danger py-2 px-3 small mb-3';
+      alertBox.textContent = err.message || 'An unexpected error occurred.';
+    })
+    .finally(function () {
+      submitBtn.disabled = false;
+      submitSpinner.classList.add('d-none');
+      submitText.innerHTML = '<i class="bi bi-check-lg me-1"></i> Confirm & Update';
+    });
+  });
+
+  // Global helper for showing toast notifications
+  function showPortalToast(message, type) {
+    let container = document.querySelector('.toast-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'toast-container position-fixed top-0 end-0 p-3';
+      document.body.appendChild(container);
+    }
+
+    const toastDiv = document.createElement('div');
+    const bgClass = type === 'success' ? 'text-bg-success' : (type === 'danger' ? 'text-bg-danger' : 'text-bg-primary');
+    const iconClass = type === 'success' ? 'bi-check-circle-fill' : 'bi-exclamation-triangle-fill';
+
+    toastDiv.className = `toast portal-toast show align-items-center ${bgClass} border-0 mb-2`;
+    toastDiv.setAttribute('role', 'alert');
+    toastDiv.setAttribute('aria-live', 'assertive');
+    toastDiv.setAttribute('aria-atomic', 'true');
+    toastDiv.innerHTML = `
+      <div class="d-flex">
+        <div class="toast-body d-flex align-items-center gap-2">
+          <i class="bi ${iconClass} fs-5"></i>
+          <span>${message}</span>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    `;
+
+    container.appendChild(toastDiv);
+    const bsToast = new bootstrap.Toast(toastDiv, { delay: 4000 });
+    bsToast.show();
+    toastDiv.addEventListener('hidden.bs.toast', function () {
+      toastDiv.remove();
+    });
+  }
+});
+
+function populateMarkLeftModalDirectory(button) {
+  const code = button.getAttribute('data-resident-code');
+  const name = button.getAttribute('data-resident-name');
+  const branch = button.getAttribute('data-branch-name');
+  const rent = parseFloat(button.getAttribute('data-outstanding-rent') || 0);
+  const dep = parseFloat(button.getAttribute('data-outstanding-deposit') || 0);
+  const total = parseFloat(button.getAttribute('data-outstanding-total') || 0);
+  const admDate = button.getAttribute('data-admission-date');
+
+  document.getElementById('mldResidentName').textContent = name;
+  document.getElementById('mldResidentCode').textContent = code;
+  document.getElementById('mldBranchName').textContent = branch;
+  document.getElementById('mldOutstandingRent').textContent = '₹ ' + rent.toLocaleString('en-IN', {minimumFractionDigits: 2});
+  document.getElementById('mldOutstandingDeposit').textContent = '₹ ' + dep.toLocaleString('en-IN', {minimumFractionDigits: 2});
+
+  const duesAlert = document.getElementById('mldDuesAlert');
+  const noDuesAlert = document.getElementById('mldNoDuesAlert');
+  if (total > 0) {
+    document.getElementById('mldTotalDues').textContent = '₹ ' + total.toLocaleString('en-IN', {minimumFractionDigits: 2});
+    duesAlert.classList.remove('d-none');
+    noDuesAlert.classList.add('d-none');
+  } else {
+    duesAlert.classList.add('d-none');
+    noDuesAlert.classList.remove('d-none');
+  }
+
+  const dateInput = document.getElementById('mldLeavingDate');
+  if (admDate) {
+    dateInput.setAttribute('min', admDate);
+  }
+  document.getElementById('markLeftFormDirectory').setAttribute('action', `/residents/${code}/departure`);
+}
+</script>
+{% endblock %}
+

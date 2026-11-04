@@ -1,0 +1,323 @@
+{% extends 'base.html' %}
+
+{% block title %}Add New Resident{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-row justify-content-between align-items-center mb-4">
+  <div>
+    <h1 class="page-title">Add New Resident</h1>
+    <p class="page-subtitle">Onboard a new resident, assign branch, secure Aadhaar information, and initialize deposit ledger</p>
+  </div>
+  <div>
+    <a href="{{ url_for('residents.index') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Back to Directory
+    </a>
+  </div>
+</div>
+
+<form method="POST" action="{{ url_for('residents.add') }}" enctype="multipart/form-data" novalidate id="addResidentForm">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="row g-4">
+    <!-- LEFT COLUMN: Identity & Branch Assignment -->
+    <div class="col-lg-7">
+      <!-- Section 1: Personal Details -->
+      <div class="card-portal mb-4">
+        <div class="card-portal-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-person-badge text-primary"></i>
+            <h2 class="h6 mb-0 fw-bold">1. Personal & Identification Information</h2>
+          </div>
+        </div>
+        <div class="card-portal-body">
+          <!-- Full Name -->
+          <div class="mb-3">
+            <label for="full_name" class="form-label required">Full Legal Name</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="full_name" 
+              name="full_name" 
+              placeholder="e.g. Ramesh Kumar" 
+              value="{{ form_data.full_name if form_data else '' }}"
+              required
+            >
+            <div class="form-text">As printed on government identity documentation.</div>
+          </div>
+
+          <!-- Aadhaar Identification Field with Security Notice -->
+          <div class="mb-3">
+            <label for="aadhaar_number" class="form-label required">
+              12-Digit Aadhaar Identification Number
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-white text-muted">
+                <i class="bi bi-shield-lock"></i>
+              </span>
+              <input 
+                type="text" 
+                class="form-control font-monospace" 
+                id="aadhaar_number" 
+                name="aadhaar_number" 
+                placeholder="XXXX XXXX XXXX" 
+                maxlength="14" 
+                data-aadhaar-input 
+                data-feedback-target="aadhaarFeedback"
+                required
+                autocomplete="off"
+              >
+            </div>
+            <div id="aadhaarFeedback" class="form-text text-muted">
+              Enter 12-digit UIDAI number. Will be encrypted at rest using AES-256.
+            </div>
+
+            <!-- Aadhaar Privacy Box -->
+            <div class="security-notice mt-2">
+              <i class="bi bi-shield-check text-primary me-1"></i>
+              <strong>Data Protection Rule:</strong> Full Aadhaar is encrypted before database insertion. Only the last 4 digits are visible across portal tables. Plaintext numbers are never cached in browser local storage.
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <!-- Contact Phone -->
+            <div class="col-sm-6">
+              <label for="phone_number" class="form-label">Contact Phone</label>
+              <input 
+                type="tel" 
+                class="form-control" 
+                id="phone_number" 
+                name="phone_number" 
+                placeholder="+91 98765 00000"
+              >
+            </div>
+            <!-- Emergency Contact -->
+            <div class="col-sm-6">
+              <label for="emergency_contact" class="form-label">Emergency Contact</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="emergency_contact" 
+                name="emergency_contact" 
+                placeholder="Name / Phone / Relation"
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 2: Branch & Admission Details -->
+      <div class="card-portal mb-4">
+        <div class="card-portal-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-building text-primary"></i>
+            <h2 class="h6 mb-0 fw-bold">2. Branch Assignment & Admission Date</h2>
+          </div>
+        </div>
+        <div class="card-portal-body">
+          <div class="row g-3">
+            <!-- Hostel Branch -->
+            <div class="col-sm-6">
+              <label for="branch_id" class="form-label required">Hostel Branch</label>
+              <select class="form-select" id="branch_id" name="branch_id" required>
+                <option value="" disabled selected>Select Active Branch</option>
+                {% for b in branches %}
+                  <option value="{{ b.id }}">
+                    {{ b.branch_name }} ({{ b.branch_code }})
+                  </option>
+                {% endfor %}
+              </select>
+              <div class="form-text">Residents are strictly linked to a specific branch.</div>
+            </div>
+
+            <!-- Admission Date -->
+            <div class="col-sm-6">
+              <label for="admission_date" class="form-label required">Admission Date</label>
+              <input 
+                type="date" 
+                class="form-control" 
+                id="admission_date" 
+                name="admission_date" 
+                value="{{ today }}"
+                required
+              >
+            </div>
+
+            <!-- Room / Bed Details -->
+            <div class="col-12">
+              <label for="room_number" class="form-label">Room / Bed Assignment</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="room_number" 
+                name="room_number" 
+                placeholder="e.g. Room 204 - Bed B"
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Photograph Upload & Financial Onboarding -->
+    <div class="col-lg-5">
+      <!-- Section 3: Photograph Upload with Instant Preview -->
+      <div class="card-portal mb-4">
+        <div class="card-portal-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-camera text-primary"></i>
+            <h2 class="h6 mb-0 fw-bold">Resident Photograph</h2>
+          </div>
+        </div>
+        <div class="card-portal-body text-center">
+          <!-- Preview Box -->
+          <div class="d-flex flex-column align-items-center justify-content-center p-3 mb-3 border rounded bg-light" style="min-height: 180px;">
+            <img 
+              id="photoPreview" 
+              src="" 
+              alt="Uploaded Photograph Preview" 
+              class="avatar-lg d-none mb-2"
+            >
+            <div id="photoPlaceholder" class="text-center text-muted">
+              <i class="bi bi-person-bounding-box fs-1 d-block mb-2 text-secondary"></i>
+              <span class="small d-block">No photograph selected yet</span>
+              <span class="text-muted" style="font-size: 0.75rem;">JPG, PNG or WEBP (Max 5MB)</span>
+            </div>
+          </div>
+
+          <div class="text-start">
+            <label for="photograph" class="form-label">Upload Resident Photo</label>
+            <input 
+              type="file" 
+              class="form-control form-control-sm" 
+              id="photograph" 
+              name="photograph" 
+              accept="image/*"
+              data-preview-target="#photoPreview"
+              data-placeholder-target="#photoPlaceholder"
+            >
+            <div class="form-text">Photograph is stored securely in the portal media repository.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Initial Financial Onboarding -->
+      <div class="card-portal mb-4">
+        <div class="card-portal-header">
+          <div class="d-flex align-items-center gap-2">
+            <i class="bi bi-currency-rupee text-primary"></i>
+            <h2 class="h6 mb-0 fw-bold">Initial Financial Ledger</h2>
+          </div>
+        </div>
+        <div class="card-portal-body">
+          <!-- Security Deposit -->
+          <div class="row g-2 mb-3">
+            <div class="col-7">
+              <label for="security_deposit" class="form-label required">Security Deposit (₹)</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="security_deposit" 
+                name="security_deposit" 
+                placeholder="12000" 
+                value="12000"
+                step="500"
+                required
+              >
+            </div>
+            <div class="col-5">
+              <label for="deposit_status" class="form-label required">Deposit Status</label>
+              <select class="form-select" id="deposit_status" name="deposit_status" required>
+                <option value="PAID" selected>PAID</option>
+                <option value="PENDING">PENDING</option>
+                <option value="PARTIAL">PARTIAL</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Admission Rent (Initial Move-In Obligation) -->
+          <div class="row g-2 mb-3">
+            <div class="col-7">
+              <label for="admission_rent" class="form-label">Admission Rent (₹)</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="admission_rent" 
+                name="admission_rent" 
+                placeholder="8500" 
+                value="8500"
+                step="500"
+              >
+            </div>
+            <div class="col-5">
+              <label for="admission_rent_status" class="form-label">Admission Status</label>
+              <select class="form-select" id="admission_rent_status" name="admission_rent_status">
+                <option value="PAID" selected>PAID</option>
+                <option value="PENDING">PENDING</option>
+                <option value="PARTIAL">PARTIAL</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Agreed Monthly Rent -->
+          <div class="row g-2 mb-3">
+            <div class="col-7">
+              <label for="monthly_rent" class="form-label required">Agreed Monthly Rent (₹)</label>
+              <input 
+                type="number" 
+                class="form-control" 
+                id="monthly_rent" 
+                name="monthly_rent" 
+                placeholder="8500" 
+                value="8500"
+                step="500"
+                required
+              >
+            </div>
+            <div class="col-5">
+              <label for="rent_status" class="form-label required">Rent Status</label>
+              <select class="form-select" id="rent_status" name="rent_status" required>
+                <option value="PAID" selected>PAID</option>
+                <option value="PENDING">PENDING</option>
+                <option value="PARTIAL">PARTIAL</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Payment Method -->
+          <div class="mb-3">
+            <label for="payment_method" class="form-label">Payment Method</label>
+            <select class="form-select" id="payment_method" name="payment_method">
+              <option value="UPI" selected>UPI (GPay / PhonePe / Paytm)</option>
+              <option value="BANK_TRANSFER">Direct Bank Transfer / NEFT / IMPS</option>
+              <option value="CASH">Cash at Counter</option>
+              <option value="CHEQUE">Cheque / Demand Draft</option>
+            </select>
+          </div>
+
+          <!-- Transaction Reference -->
+          <div class="mb-2">
+            <label for="transaction_reference" class="form-label">Transaction Reference / UTR</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="transaction_reference" 
+              name="transaction_reference" 
+              placeholder="e.g. UPI/428901238912"
+            >
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex align-items-center justify-content-end gap-2">
+        <a href="{{ url_for('residents.index') }}" class="btn btn-secondary">
+          Cancel
+        </a>
+        <button type="submit" class="btn btn-primary px-4 fw-semibold">
+          <i class="bi bi-check2-circle me-1"></i> Save Resident
+        </button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+

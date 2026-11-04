@@ -1,0 +1,296 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="page-header d-flex flex-row justify-content-between align-items-center">
+  <div>
+    <h1 class="page-title">
+      {% if stats.is_all_branches %}
+        Consolidated Overview &bull; All Branches
+      {% else %}
+        {{ stats.branch_name }} ({{ stats.branch_code }})
+      {% endif %}
+    </h1>
+    <p class="page-subtitle">Real-time occupancy metrics, admissions, and financial collections overview</p>
+  </div>
+  <div class="page-actions d-flex gap-2">
+    <a href="{{ url_for('residents.add') }}" class="btn btn-primary btn-sm">
+      <i class="bi bi-person-plus"></i> New Resident
+    </a>
+    <a href="{{ url_for('payments.index') }}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-cash-stack"></i> Record Payment
+    </a>
+  </div>
+</div>
+
+<!-- =========================================================================
+     STATISTICS KPI CARDS (6 CARDS)
+     ========================================================================= -->
+<div class="stat-card-grid">
+  <!-- 1. Total Residents -->
+  <div class="stat-card card-primary">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Total Residents</span>
+      <div class="stat-card-icon"><i class="bi bi-people"></i></div>
+    </div>
+    <div class="stat-card-value">{{ stats.total_residents }}</div>
+    <div class="stat-card-subtext">Registered across lifecycle</div>
+  </div>
+
+  <!-- 2. Active Residents -->
+  <div class="stat-card card-success">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Active Residents</span>
+      <div class="stat-card-icon"><i class="bi bi-person-check"></i></div>
+    </div>
+    <div class="stat-card-value text-success">{{ stats.active_residents }}</div>
+    <div class="stat-card-subtext">Currently residing in rooms</div>
+  </div>
+
+  <!-- 3. Residents Who Have Left -->
+  <div class="stat-card card-secondary">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Residents Left</span>
+      <div class="stat-card-icon"><i class="bi bi-person-dash"></i></div>
+    </div>
+    <div class="stat-card-value text-muted">{{ stats.left_residents }}</div>
+    <div class="stat-card-subtext">Under 30-day retention</div>
+  </div>
+
+  <!-- 4. Pending Deposits -->
+  <div class="stat-card card-warning">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Pending Deposits</span>
+      <div class="stat-card-icon"><i class="bi bi-shield-exclamation"></i></div>
+    </div>
+    <div class="stat-card-value text-warning">{{ stats.pending_deposits_amount|currency }}</div>
+    <div class="stat-card-subtext">{{ stats.pending_deposits_count }} resident(s) pending</div>
+  </div>
+
+  <!-- 5. Pending Rent -->
+  <div class="stat-card card-danger">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Pending Rent</span>
+      <div class="stat-card-icon"><i class="bi bi-exclamation-diamond"></i></div>
+    </div>
+    <div class="stat-card-value text-danger">{{ stats.pending_rent_amount|currency }}</div>
+    <div class="stat-card-subtext">{{ stats.pending_rent_count }} overdue / partial</div>
+  </div>
+
+  <!-- 6. Total Collections -->
+  <div class="stat-card card-primary">
+    <div class="stat-card-top">
+      <span class="stat-card-title">Total Collections</span>
+      <div class="stat-card-icon"><i class="bi bi-wallet2"></i></div>
+    </div>
+    <div class="stat-card-value">{{ stats.total_collection|currency }}</div>
+    <div class="stat-card-subtext">Deposits & verified rent</div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     RECENT ADMISSIONS & BRANCH DISTRIBUTION SECTION
+     ========================================================================= -->
+<div class="row g-3 mb-4">
+  <!-- Recent Admissions Table -->
+  <div class="col-lg-8">
+    <div class="card-portal h-100">
+      <div class="card-portal-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-person-plus text-primary"></i>
+          <h2 class="h6 mb-0 fw-bold">Recent Admissions</h2>
+        </div>
+        <a href="{{ url_for('residents.index') }}" class="btn btn-sm btn-outline-primary">
+          View All Directory <i class="bi bi-arrow-right ms-1"></i>
+        </a>
+      </div>
+      <div class="card-portal-body p-0">
+        <div class="table-responsive-portal">
+          <table class="table-portal">
+            <thead>
+              <tr>
+                <th>Resident</th>
+                <th>Branch</th>
+                <th>Admission Date</th>
+                <th>Room / Bed</th>
+                <th>Deposit Status</th>
+                <th class="text-end">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for res in recent_admissions %}
+                <tr>
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <img src="{{ res.photograph_path }}" alt="{{ res.full_name }}" class="avatar-thumb">
+                      <div>
+                        <div class="fw-semibold text-dark">{{ res.full_name }}</div>
+                        <span class="text-muted small">{{ res.resident_code }}</span>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="badge bg-light text-dark border">{{ res.branch_code }}</span>
+                  </td>
+                  <td>{{ res.admission_date|format_date }}</td>
+                  <td>{{ res.room_number }}</td>
+                  <td>
+                    {% if res.deposit_status == 'PAID' %}
+                      <span class="badge-status badge-paid">Paid</span>
+                    {% elif res.deposit_status == 'PARTIAL' %}
+                      <span class="badge-status badge-partial">Partial</span>
+                    {% else %}
+                      <span class="badge-status badge-pending">Pending</span>
+                    {% endif %}
+                  </td>
+                  <td class="text-end">
+                    <a href="{{ url_for('residents.profile', resident_code=res.resident_code) }}" class="btn btn-sm btn-outline-primary py-1 px-2">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                  </td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="6" class="text-center py-4 text-muted">
+                    No recent resident admissions recorded for this selection.
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Branch-wise Resident Distribution -->
+  <div class="col-lg-4">
+    <div class="card-portal h-100">
+      <div class="card-portal-header">
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-pie-chart text-primary"></i>
+          <h2 class="h6 mb-0 fw-bold">Branch Distribution</h2>
+        </div>
+        <span class="badge bg-light text-muted border">Active Capacity</span>
+      </div>
+      <div class="card-portal-body">
+        <div class="d-flex flex-column gap-3">
+          {% for b in branch_distribution %}
+            <div class="branch-distribution-item">
+              <div class="branch-distribution-header">
+                <div>
+                  <span class="branch-distribution-name">{{ b.branch_name }}</span>
+                  {% if not b.is_active %}
+                    <span class="badge bg-secondary-subtle text-secondary ms-1 small">Deactivated</span>
+                  {% endif %}
+                </div>
+                <span class="branch-distribution-count">
+                  {{ b.active_count }} / {{ b.total_count }} Residents
+                </span>
+              </div>
+              <div class="distribution-progress">
+                <div 
+                  class="distribution-progress-bar {% if not b.is_active %}bg-secondary{% endif %}" 
+                  style="width: {{ b.percentage }}%;"
+                ></div>
+              </div>
+              <div class="d-flex justify-content-between mt-1">
+                <span class="small text-muted">{{ b.branch_code }}</span>
+                <span class="small text-muted fw-semibold">{{ b.percentage }}% occupancy</span>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="card-portal-footer">
+        <a href="{{ url_for('branches.index') }}" class="btn btn-sm btn-outline-primary w-100">
+          <i class="bi bi-diagram-3 me-1"></i> Manage All Branches
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================================
+     RECENT PAYMENT ACTIVITY SECTION
+     ========================================================================= -->
+<div class="card-portal mb-4">
+  <div class="card-portal-header">
+    <div class="d-flex align-items-center gap-2">
+      <i class="bi bi-cash-coin text-primary"></i>
+      <h2 class="h6 mb-0 fw-bold">Recent Payment Activity</h2>
+    </div>
+    <a href="{{ url_for('payments.index') }}" class="btn btn-sm btn-outline-primary">
+      All Transactions <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+  </div>
+  <div class="card-portal-body p-0">
+    <div class="table-responsive-portal">
+      <table class="table-portal">
+        <thead>
+          <tr>
+            <th>Payment ID</th>
+            <th>Resident</th>
+            <th>Branch</th>
+            <th>Type</th>
+            <th>Amount</th>
+            <th>Payment Date</th>
+            <th>Method & Ref</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in recent_payments %}
+            <tr>
+              <td>
+                <span class="fw-semibold text-dark">{{ p.payment_id }}</span>
+              </td>
+              <td>
+                <div class="fw-semibold text-dark">{{ p.resident_name }}</div>
+                <span class="text-muted small">{{ p.resident_code }}</span>
+              </td>
+              <td>
+                <span class="badge bg-light text-dark border">{{ p.branch_name }}</span>
+              </td>
+              <td>
+                {% if p.payment_type == 'SECURITY_DEPOSIT' %}
+                  <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Security Deposit</span>
+                {% else %}
+                  <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle">Monthly Rent</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="fw-bold text-dark">{{ p.amount|currency }}</span>
+              </td>
+              <td>{{ p.payment_date|format_date }}</td>
+              <td>
+                <span class="badge bg-light text-secondary border">{{ p.payment_method or 'CASH' }}</span>
+                {% if p.transaction_reference %}
+                  <div class="small text-muted font-monospace">{{ p.transaction_reference }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if p.payment_status == 'PAID' %}
+                  <span class="badge-status badge-paid">Paid</span>
+                {% elif p.payment_status == 'PARTIAL' %}
+                  <span class="badge-status badge-partial">Partial</span>
+                {% else %}
+                  <span class="badge-status badge-pending">Pending</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% else %}
+            <tr>
+              <td colspan="8" class="text-center py-4 text-muted">
+                No recent payment transactions found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
