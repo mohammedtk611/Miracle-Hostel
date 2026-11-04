@@ -1,26 +1,48 @@
 """
 Application Entry Point for Miracle Hostel Management Portal.
-Includes secure CLI commands for database initialization and initial administrator creation.
+Includes secure CLI commands for database initialization, migrations, and administrator management.
 """
 import os
 import sys
 import click
 from app import create_app
 from app.extensions import db
-from app.models import Admin, LoginLog, PasswordResetToken, AuditLog, Branch, Resident, Payment
+from app.models import Admin, Branch
 from app.models.audit_log import AuditAction
 from app.services.audit_service import AuditService
 from app.services.seed_service import seed_database_sample_data
+from app.services.migration_service import MigrationService
 
 app = create_app(os.environ.get('FLASK_ENV', 'development'))
 
 
 def seed_or_create_admin(email=None, username=None, password=None):
-    """Core function to safely initialize or update the single administrator account."""
+    """
+    Core function to safely initialize or update the administrator account.
+    In production: Requires explicitly provided password or ADMIN_DEFAULT_PASSWORD env var.
+    In development: Uses developer defaults if not provided.
+    """
     with app.app_context():
-        email = email or os.environ.get('ADMIN_EMAIL', 'admin@123')
-        username = username or os.environ.get('ADMIN_USERNAME', 'admin')
-        password = password or os.environ.get('ADMIN_DEFAULT_PASSWORD', '1234')
+        is_prod = app.config.get('ENV') == 'production' or os.environ.get('FLASK_ENV') == 'production'
+
+        email = email or os.environ.get('ADMIN_EMAIL')
+        username = username or os.environ.get('ADMIN_USERNAME')
+        password = password or os.environ.get('ADMIN_DEFAULT_PASSWORD')
+
+        if is_prod:
+            if not email:
+                email = 'admin@miraclehostel.com'
+            if not username:
+                username = 'admin'
+            if not password:
+                raise ValueError(
+                    "In production, an explicit administrator password must be provided via "
+                    "--password CLI option or ADMIN_DEFAULT_PASSWORD environment variable."
+                )
+        else:
+            email = email or 'admin@123'
+            username = username or 'admin'
+            password = password or '1234'
 
         existing_admin = Admin.query.first()
         if existing_admin:
@@ -53,19 +75,32 @@ def seed_or_create_admin(email=None, username=None, password=None):
 
 
 @app.cli.command("init-db")
-def init_db():
-    """CLI command to initialize database tables and seed sample data."""
+@click.option("--seed/--no-seed", default=None, help="Seed sample demo data (defaults to False in production, True in development)")
+def init_db(seed):
+    """
+    CLI command to initialize database schema safely.
+    In production: Creates tables and applies schema migrations WITHOUT inserting demo data.
+    """
     with app.app_context():
         db.create_all()
-        seed_database_sample_data()
-        print("[Miracle Hostel] Database tables initialized and seeded successfully.")
+        MigrationService.migrate_schema()
+
+        is_prod = app.config.get('ENV') == 'production' or os.environ.get('FLASK_ENV') == 'production'
+        should_seed = seed if seed is not None else (not is_prod)
+
+        if should_seed:
+            seed_database_sample_data()
+            print("[Miracle Hostel] Database initialized and sample demonstration data seeded.")
+        else:
+            print("[Miracle Hostel] Database initialized safely without sample demonstration data.")
 
 
 @app.cli.command("seed-db")
 def seed_db():
-    """CLI command to seed sample branches, residents, and payments."""
+    """CLI command to explicitly seed sample branches, residents, and payments (development only)."""
     with app.app_context():
         db.create_all()
+        MigrationService.migrate_schema()
         seeded = seed_database_sample_data(force=True)
         print(f"[Miracle Hostel] Database sample data seeded (forced: {seeded}).")
 
@@ -81,14 +116,22 @@ def create_admin_cli(email, username, password):
 
 if __name__ == '__main__':
     args = sys.argv[1:]
+    is_prod = app.config.get('ENV') == 'production' or os.environ.get('FLASK_ENV') == 'production'
+
     if args and args[0] == 'init-db':
         with app.app_context():
             db.create_all()
-            seed_database_sample_data()
-            print("[Miracle Hostel] Database tables initialized and seeded successfully.")
+            MigrationService.migrate_schema()
+            should_seed = False if is_prod else ('--seed' in args or not ('--no-seed' in args))
+            if should_seed:
+                seed_database_sample_data()
+                print("[Miracle Hostel] Database initialized and sample demonstration data seeded.")
+            else:
+                print("[Miracle Hostel] Database initialized safely without sample demonstration data.")
     elif args and args[0] == 'seed-db':
         with app.app_context():
             db.create_all()
+            MigrationService.migrate_schema()
             seed_database_sample_data(force=True)
             print("[Miracle Hostel] Database sample data seeded successfully.")
     elif args and args[0] == 'cleanup-expired-residents':
@@ -109,18 +152,21 @@ if __name__ == '__main__':
                 password = args[i + 1]
         seed_or_create_admin(email, username, password)
     else:
-        # Automatically ensure database tables & default administrator exist on local run
+        # Development startup: automatically ensure tables & dev admin exist
         with app.app_context():
             db.create_all()
-            if not Admin.query.first():
-                seed_or_create_admin()
-            if not Branch.query.first():
-                seed_database_sample_data()
+            MigrationService.migrate_schema()
+            if not is_prod:
+                if not Admin.query.first():
+                    seed_or_create_admin()
+                if not Branch.query.first():
+                    seed_database_sample_data()
 
         port = int(os.environ.get('PORT', 5000))
-        debug = os.environ.get('FLASK_DEBUG', 'true').lower() in ('true', '1', 'yes')
+        debug = (not is_prod) and os.environ.get('FLASK_DEBUG', 'true').lower() in ('true', '1', 'yes')
+        host = '0.0.0.0' if os.environ.get('PORT') else '127.0.0.1'
         print(f"\n=========================================================")
-        print(f"  Miracle Hostel Management Portal (Phase 3 Authentication)")
-        print(f"  Starting secure server at http://127.0.0.1:{port}      ")
+        print(f"  Miracle Hostel Management Portal ({app.config.get('ENV', 'development').upper()})")
+        print(f"  Starting server at http://{host}:{port}                ")
         print(f"=========================================================\n")
-        app.run(host='127.0.0.1', port=port, debug=debug)
+        app.run(host=host, port=port, debug=debug)

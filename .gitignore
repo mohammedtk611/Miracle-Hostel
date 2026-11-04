@@ -23,14 +23,28 @@ wheels/
 .installed.cfg
 *.egg
 
-# Virtual environments
+# Virtual environments & Local Secrets
 .env
+.env.*
+!.env.example
 .venv
 env.bak/
 venv.bak/
 
+# Google OAuth & Service Account credentials (DO NOT COMMIT)
+credentials.json
+client_secret*.json
+client_secrets.json
+token.json
+token.pickle
+*.token
+tokens/
+service-account*.json
+*service_account*.json
+
 # Database files
 *.db
+*.sqlite
 *.sqlite3
 miracle_hostel_dev.db
 
@@ -41,16 +55,22 @@ instance/
 Thumbs.db
 desktop.ini
 
-# Uploads and private storage
+# Uploads, temporary images, and private storage
 storage/
 storage/private/*
 !storage/private/.gitkeep
 app/static/uploads/*
 !app/static/uploads/.gitkeep
+*.tmp
+temp_upload*
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
 
 # IDE / Editor folders
 .vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
-

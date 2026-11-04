@@ -17,7 +17,14 @@ def create_app(config_name=None):
         config_name = os.environ.get('FLASK_ENV', 'development')
 
     app = Flask(__name__)
-    app.config.from_object(config.get(config_name, config['default']))
+    config_cls = config.get(config_name, config['default'])
+    
+    # In production, enforce strict security configuration validation
+    if config_name == 'production' or getattr(config_cls, 'ENV', '') == 'production':
+        if hasattr(config_cls, 'validate_production'):
+            config_cls.validate_production()
+
+    app.config.from_object(config_cls)
 
     # Initialize extensions
     db.init_app(app)

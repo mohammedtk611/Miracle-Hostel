@@ -385,14 +385,19 @@ def edit(resident_code):
 
         # Photograph replacement if provided
         photo_file = request.files.get('photograph')
+        old_photo_path = resident.photograph_path
+        new_photo_path = None
         if photo_file and photo_file.filename:
             is_valid_img, img_err = validate_image_upload(photo_file)
             if not is_valid_img:
                 errors.append(f"Photograph error: {img_err}")
             else:
-                # Remove obsolete photograph from disk if present
-                StorageService.delete_photograph(resident.photograph_path)
-                resident.photograph_path = StorageService.save_photograph(photo_file, prefix="res")
+                # Upload and verify the new photograph first before modifying DB or deleting old
+                try:
+                    new_photo_path = StorageService.save_photograph(photo_file, prefix="res")
+                    resident.photograph_path = new_photo_path
+                except Exception as e:
+                    errors.append(f"Photograph upload failed: {str(e)}")
 
         if errors:
             for err in errors:
@@ -405,6 +410,18 @@ def edit(resident_code):
         resident.admission_date = parsed_date
         resident.updated_at = datetime.utcnow()
         db.session.commit()
+
+        # Safely remove obsolete photograph only after commit succeeds
+        if new_photo_path and old_photo_path and old_photo_path != new_photo_path:
+            other_ref = Resident.query.filter(
+                Resident.id != resident.id,
+                Resident.photograph_path == old_photo_path
+            ).first()
+            if not other_ref:
+                try:
+                    StorageService.delete_photograph(old_photo_path)
+                except Exception as e:
+                    current_app.logger.warning(f"Could not delete old photograph '{old_photo_path}': {e}")
 
         AuditService.log(
             action=AuditAction.RESIDENT_UPDATE,
@@ -438,13 +455,30 @@ def update_photo(resident_code):
         flash(f"Photograph upload error: {img_err}", "danger")
         return redirect(url_for('residents.profile', resident_code=resident.resident_code))
 
-    # Remove obsolete image
-    StorageService.delete_photograph(resident.photograph_path)
+    old_photo = resident.photograph_path
+    # 1. Upload and verify new image first
+    try:
+        new_photo = StorageService.save_photograph(photo_file, prefix="res")
+    except Exception as e:
+        flash(f"Failed to upload new photograph: {str(e)}", "danger")
+        return redirect(url_for('residents.profile', resident_code=resident.resident_code))
 
-    # Save new compressed image and update DB
-    resident.photograph_path = StorageService.save_photograph(photo_file, prefix="res")
+    # 2. Update database reference
+    resident.photograph_path = new_photo
     resident.updated_at = datetime.utcnow()
     db.session.commit()
+
+    # 3. Safely delete obsolete image only after new photograph and DB commit succeed
+    if old_photo and old_photo != new_photo:
+        other_ref = Resident.query.filter(
+            Resident.id != resident.id,
+            Resident.photograph_path == old_photo
+        ).first()
+        if not other_ref:
+            try:
+                StorageService.delete_photograph(old_photo)
+            except Exception as e:
+                current_app.logger.warning(f"Could not delete old photograph '{old_photo}': {e}")
 
     AuditService.log(
         action=AuditAction.RESIDENT_UPDATE,
