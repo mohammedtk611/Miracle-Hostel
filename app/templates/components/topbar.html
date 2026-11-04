@@ -31,6 +31,16 @@
       <span>System Active • 30d Retention Active</span>
     </div>
 
+    <!-- Dark / Light Theme Toggle Button -->
+    <button class="btn btn-sm btn-outline-secondary theme-toggle-btn d-inline-flex align-items-center justify-content-center p-2 rounded-circle" 
+            id="themeToggleBtn" 
+            type="button" 
+            title="Toggle Light/Dark Theme" 
+            aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-icon-dark"></i>
+      <i class="bi bi-sun-fill theme-icon-light d-none text-warning"></i>
+    </button>
+
     <!-- User / Logout Control -->
     <div class="dropdown">
       <button class="btn btn-sm btn-outline-primary dropdown-toggle d-flex align-items-center gap-2" type="button" id="adminMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
@@ -42,6 +52,12 @@
           <h6 class="dropdown-header">
             {{ current_user.email if current_user.is_authenticated else 'Super Admin' }}
           </h6>
+        </li>
+        <li>
+          <button type="button" class="dropdown-item d-flex align-items-center justify-content-between" id="themeToggleDropdownBtn">
+            <span><i class="bi bi-moon-stars me-2 text-muted"></i>Dark Mode</span>
+            <span class="badge bg-secondary-subtle text-secondary small theme-mode-label">Off</span>
+          </button>
         </li>
         <li>
           <a class="dropdown-item" href="{{ url_for('settings.index') }}">

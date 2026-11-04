@@ -24,6 +24,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // 7. Table Action Dropdowns Anti-Clipping & Max Z-Index
   initTableDropdowns();
+
+  // 8. Dark / Light Theme Mode Switcher
+  initThemeToggle();
 });
 
 /**
@@ -347,5 +350,99 @@ function initTableDropdowns() {
       }
     }
   });
+}
+
+/**
+ * Dark / Light Theme Mode Switcher
+ * Provides persistent toggle between Light and Dark mode with anti-FOUC and system preference support.
+ */
+function initThemeToggle() {
+  const toggleButtons = document.querySelectorAll('.theme-toggle-btn, #themeToggleBtn');
+  const dropdownBtn = document.getElementById('themeToggleDropdownBtn');
+
+  function getActiveTheme() {
+    return document.documentElement.getAttribute('data-bs-theme') || 
+           localStorage.getItem('miracle_theme') || 
+           (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  }
+
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-bs-theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+
+    const metaScheme = document.querySelector('meta[name="color-scheme"]');
+    if (metaScheme) {
+      metaScheme.content = theme;
+    }
+
+    // Update Topbar Toggle Button Icon
+    const darkIcons = document.querySelectorAll('.theme-icon-dark');
+    const lightIcons = document.querySelectorAll('.theme-icon-light');
+    const modeLabels = document.querySelectorAll('.theme-mode-label');
+
+    if (theme === 'dark') {
+      darkIcons.forEach(el => el.classList.add('d-none'));
+      lightIcons.forEach(el => el.classList.remove('d-none'));
+      modeLabels.forEach(el => {
+        el.textContent = 'On';
+        el.className = 'badge bg-success-subtle text-success small theme-mode-label';
+      });
+      toggleButtons.forEach(btn => {
+        btn.setAttribute('title', 'Switch to Light Theme');
+      });
+    } else {
+      darkIcons.forEach(el => el.classList.remove('d-none'));
+      lightIcons.forEach(el => el.classList.add('d-none'));
+      modeLabels.forEach(el => {
+        el.textContent = 'Off';
+        el.className = 'badge bg-secondary-subtle text-secondary small theme-mode-label';
+      });
+      toggleButtons.forEach(btn => {
+        btn.setAttribute('title', 'Switch to Dark Theme');
+      });
+    }
+  }
+
+  function toggleTheme() {
+    const currentTheme = getActiveTheme();
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    try {
+      localStorage.setItem('miracle_theme', newTheme);
+    } catch (e) {}
+    applyTheme(newTheme);
+  }
+
+  toggleButtons.forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      toggleTheme();
+    });
+  });
+
+  if (dropdownBtn) {
+    dropdownBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      toggleTheme();
+    });
+  }
+
+  // Sync across browser tabs
+  window.addEventListener('storage', function (e) {
+    if (e.key === 'miracle_theme' && e.newValue) {
+      applyTheme(e.newValue);
+    }
+  });
+
+  // Listen to OS system preference changes if no explicit user override is stored
+  if (window.matchMedia) {
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function (e) {
+      if (!localStorage.getItem('miracle_theme')) {
+        applyTheme(e.matches ? 'dark' : 'light');
+      }
+    });
+  }
+
+  // Initial UI state setup
+  applyTheme(getActiveTheme());
 }
 

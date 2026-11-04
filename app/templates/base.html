@@ -3,8 +3,22 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}{{ app_name }}{% endblock %} | Miracle Hostel Portal</title>
+
+  <!-- Prevent FOUC: Apply user theme preference before rendering -->
+  <script>
+    (function() {
+      try {
+        var savedTheme = localStorage.getItem('miracle_theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-bs-theme', savedTheme);
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        var meta = document.querySelector('meta[name="color-scheme"]');
+        if (meta) meta.content = savedTheme;
+      } catch (e) {}
+    })();
+  </script>
   
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -15,7 +15,7 @@
    ------------------------------------------------------------------------- */
 .app-sidebar {
   width: var(--sidebar-width);
-  background-color: #FFFFFF;
+  background-color: var(--color-surface);
   border-right: 1px solid var(--color-border);
   display: flex;
   flex-direction: column;
@@ -152,7 +152,7 @@
 }
 
 .nav-link-portal.active {
-  background-color: #F1F5F9;
+  background-color: var(--color-secondary-subtle);
   color: var(--color-primary-dark);
   font-weight: 600;
   box-shadow: inset 3px 0 0 var(--color-primary);
@@ -165,7 +165,7 @@
 .sidebar-footer {
   padding: 0.875rem 1rem;
   border-top: 1px solid var(--color-border-subtle);
-  background-color: #FAFAFA;
+  background-color: var(--color-surface-hover);
 }
 
 .admin-chip {
@@ -221,7 +221,7 @@
 
 .app-topbar {
   height: var(--topbar-height);
-  background-color: #FFFFFF;
+  background-color: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   padding: 0 1.5rem;
   display: flex;
@@ -252,7 +252,7 @@
 }
 
 .branch-select-badge {
-  background-color: #F1F5F9;
+  background-color: var(--color-secondary-subtle);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: 0.8125rem;
@@ -273,7 +273,7 @@
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-text-muted);
-  background-color: #F8FAFC;
+  background-color: var(--color-secondary-subtle);
   padding: 0.25rem 0.625rem;
   border-radius: var(--radius-full);
   border: 1px solid var(--color-border-subtle);
@@ -340,7 +340,7 @@
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  border-color: #CBD5E1;
+  border-color: var(--color-secondary);
 }
 
 .stat-card::before {
@@ -387,7 +387,7 @@
   font-size: 1rem;
 }
 
-.stat-card.card-primary .stat-card-icon { background-color: #E2E8F0; color: var(--color-primary); }
+.stat-card.card-primary .stat-card-icon { background-color: var(--color-secondary-subtle); color: var(--color-primary); }
 .stat-card.card-success .stat-card-icon { background-color: var(--color-success-bg); color: var(--color-success); }
 .stat-card.card-warning .stat-card-icon { background-color: var(--color-warning-bg); color: var(--color-warning); }
 .stat-card.card-danger .stat-card-icon { background-color: var(--color-danger-bg); color: var(--color-danger); }

@@ -3,7 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
   <title>Administrator Sign In | Miracle Hostel Portal</title>
+  
+  <!-- Anti-FOUC Theme Initialization Script -->
+  <script>
+    (function() {
+      try {
+        const stored = localStorage.getItem('miracle_theme');
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const theme = stored ? stored : (prefersDark ? 'dark' : 'light');
+        document.documentElement.setAttribute('data-bs-theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -53,6 +67,17 @@
   </style>
 </head>
 <body>
+  <!-- Theme Switcher Floating Button -->
+  <div class="position-fixed top-0 end-0 p-3" style="z-index: 1050;">
+    <button class="btn btn-sm btn-outline-secondary theme-toggle-btn rounded-circle d-inline-flex align-items-center justify-content-center" 
+            id="themeToggleBtn" 
+            type="button" 
+            title="Toggle Light/Dark Theme" 
+            aria-label="Toggle theme">
+      <i class="bi bi-moon-stars-fill theme-icon-dark"></i>
+      <i class="bi bi-sun-fill theme-icon-light d-none text-warning"></i>
+    </button>
+  </div>
   <div class="login-container">
     <div class="login-brand-header">
       <div class="login-brand-logo">

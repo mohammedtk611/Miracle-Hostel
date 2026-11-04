@@ -113,7 +113,7 @@ img, svg, video, canvas, audio, iframe, embed, object {
     box-shadow: none;
     display: flex;
     flex-direction: column;
-    background-color: #FFFFFF;
+    background-color: var(--color-surface);
   }
 
   .app-sidebar.show-mobile {
@@ -448,7 +448,7 @@ img, svg, video, canvas, audio, iframe, embed, object {
   -webkit-overflow-scrolling: touch;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  background-color: #FFFFFF;
+  background-color: var(--color-surface);
 }
 
 /* On mobile screens, prevent horizontal sideways scrolling when marked */
@@ -477,14 +477,14 @@ img, svg, video, canvas, audio, iframe, embed, object {
   height: 4px;
 }
 .table-responsive-portal::-webkit-scrollbar-track {
-  background: #F8FAFC;
+  background: var(--color-surface-hover);
 }
 .table-responsive-portal::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: var(--color-secondary);
   border-radius: 4px;
 }
 .table-responsive-portal::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: var(--color-secondary-light);
 }
 
 /* Mobile Tabular List View (< 768px) */
@@ -502,7 +502,7 @@ img, svg, video, canvas, audio, iframe, embed, object {
 
   .table-portal-responsive thead {
     display: table-header-group !important;
-    background-color: #F8FAFC !important;
+    background-color: var(--color-surface-hover) !important;
   }
 
   .table-portal-responsive thead tr {
@@ -516,9 +516,9 @@ img, svg, video, canvas, audio, iframe, embed, object {
     font-weight: 700 !important;
     text-transform: uppercase !important;
     letter-spacing: 0.04em !important;
-    color: #64748B !important;
-    background-color: #F8FAFC !important;
-    border-bottom: 2px solid #E2E8F0 !important;
+    color: var(--color-text-muted) !important;
+    background-color: var(--color-surface-hover) !important;
+    border-bottom: 2px solid var(--color-border) !important;
     border-top: none !important;
     white-space: nowrap !important;
     vertical-align: middle !important;
@@ -532,9 +532,9 @@ img, svg, video, canvas, audio, iframe, embed, object {
   /* Compact tabular list row */
   .table-portal-responsive tbody tr {
     display: table-row !important;
-    background-color: #FFFFFF !important;
+    background-color: var(--color-surface) !important;
     border: none !important;
-    border-bottom: 1px solid #F1F5F9 !important;
+    border-bottom: 1px solid var(--color-border-subtle) !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     padding: 0 !important;
@@ -543,12 +543,12 @@ img, svg, video, canvas, audio, iframe, embed, object {
   }
 
   .table-portal-responsive tbody tr:nth-child(even) td {
-    background-color: #FAFAFC !important;
+    background-color: var(--color-surface-hover) !important;
   }
 
   .table-portal-responsive tbody tr:hover td,
   .table-portal-responsive tbody tr:active td {
-    background-color: #F1F5F9 !important;
+    background-color: var(--color-surface-hover) !important;
   }
 
   /* Compact cell layout with comfortable font sizes & spacing */
@@ -559,7 +559,7 @@ img, svg, video, canvas, audio, iframe, embed, object {
     line-height: 1.35 !important;
     color: var(--color-text-main) !important;
     border: none !important;
-    border-bottom: 1px solid #F1F5F9 !important;
+    border-bottom: 1px solid var(--color-border-subtle) !important;
     vertical-align: middle !important;
     text-align: left !important;
     min-height: auto !important;
