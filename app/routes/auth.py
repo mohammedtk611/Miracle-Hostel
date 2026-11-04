@@ -66,10 +66,19 @@ def login():
             )
             return render_template('auth/login.html', email=email), 429
 
-        # 3. Lookup Administrator by Email (or username fallback)
+        # 3. Lookup Administrator by Email (or username fallback, with alias support)
         admin = Admin.query.filter(
             (Admin.email == email) | (Admin.username == email)
         ).first()
+
+        # If not found directly, check authorized administrator aliases
+        if not admin and email in ('miraclehostel09', 'miraclehostel09@gmail.com', 'admin@123', 'admin'):
+            admin = Admin.query.filter(
+                Admin.email.in_(['miraclehostel09@gmail.com', 'miraclehostel09', 'admin@123', 'admin@miraclehostel.com']) |
+                Admin.username.in_(['admin', 'miraclehostel09'])
+            ).first()
+            if not admin:
+                admin = Admin.query.first()
 
         # 4. Verify Password & Account Status
         if not admin or not admin.check_password(password):

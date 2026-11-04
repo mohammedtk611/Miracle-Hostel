@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: miracle-hostel
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn run:app
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.14
+      - key: FLASK_APP
+        value: run.py
+      - key: FLASK_ENV
+        value: development
+      - key: FLASK_DEBUG
+        value: "false"
+      - key: SECRET_KEY
+        value: cb67673b2096506f46a9e42e5b52a733c15cbfe079ea01a41597d11b62513572
+      - key: AADHAAR_ENCRYPTION_KEY
+        value: eb191d49248a430a2bab448ceda54d36
+      - key: ADMIN_EMAIL
+        value: miraclehostel09@gmail.com
+      - key: ADMIN_USERNAME
+        value: admin
+      - key: ADMIN_DEFAULT_PASSWORD
+        value: "1234"
+      - key: RESIDENT_RETENTION_DAYS
+        value: "365"
+      - key: STORAGE_BACKEND
+        value: local_private

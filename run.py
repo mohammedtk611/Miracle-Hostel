@@ -22,6 +22,18 @@ from app.services.migration_service import MigrationService
 
 app = create_app(os.environ.get('FLASK_ENV', 'development'))
 
+# Automatic database schema and admin account verification on startup (WSGI / Gunicorn / Render)
+with app.app_context():
+    try:
+        db.create_all()
+        MigrationService.migrate_schema()
+        if not Admin.query.first():
+            seed_or_create_admin()
+        if not Branch.query.first():
+            seed_default_branches()
+    except Exception as _init_err:
+        pass
+
 
 def get_local_ip():
     """Retrieve primary local LAN IP address for multi-device testing (e.g. mobile on Wi-Fi)."""
