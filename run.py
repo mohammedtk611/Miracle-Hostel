@@ -62,30 +62,12 @@ def find_available_port(start_port=5000, host='0.0.0.0'):
 def seed_or_create_admin(email=None, username=None, password=None):
     """
     Core function to safely initialize or update the administrator account.
-    In production: Requires explicitly provided password or ADMIN_DEFAULT_PASSWORD env var.
-    In development: Uses developer defaults if not provided.
+    Works reliably across development and production on Render.
     """
     with app.app_context():
-        is_prod = app.config.get('ENV') == 'production' or os.environ.get('FLASK_ENV') == 'production'
-
-        email = email or os.environ.get('ADMIN_EMAIL')
-        username = username or os.environ.get('ADMIN_USERNAME')
-        password = password or os.environ.get('ADMIN_DEFAULT_PASSWORD')
-
-        if is_prod:
-            if not email:
-                email = 'admin@miraclehostel.com'
-            if not username:
-                username = 'admin'
-            if not password:
-                raise ValueError(
-                    "In production, an explicit administrator password must be provided via "
-                    "--password CLI option or ADMIN_DEFAULT_PASSWORD environment variable."
-                )
-        else:
-            email = email or 'admin@123'
-            username = username or 'admin'
-            password = password or '1234'
+        email = email or os.environ.get('ADMIN_EMAIL') or 'miraclehostel09@gmail.com'
+        username = username or os.environ.get('ADMIN_USERNAME') or 'admin'
+        password = password or os.environ.get('ADMIN_DEFAULT_PASSWORD') or '1234'
 
         existing_admin = Admin.query.first()
         if existing_admin:
