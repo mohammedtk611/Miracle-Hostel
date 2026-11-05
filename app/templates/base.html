@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  <title>{% block title %}{{ app_name }}{% endblock %} | Miracle Hostel Portal</title>
+  <title>{% block title %}{{ app_name }}{% endblock %} | Miracle Boys Hostel</title>
+  
+  <!-- Miracle Boys Hostel Favicon -->
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
+  <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/favicon.png') }}">
 
   <!-- Prevent FOUC: Apply user theme preference before rendering -->
   <script>

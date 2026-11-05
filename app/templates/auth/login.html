@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="light dark">
-  <title>Administrator Sign In | Miracle Hostel Portal</title>
+  <title>Administrator Sign In | Miracle Boys Hostel</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/favicon.png') }}">
   
   <!-- Anti-FOUC Theme Initialization Script -->
   <script>
@@ -52,17 +53,26 @@
       margin-bottom: 1.75rem;
     }
     .login-brand-logo {
-      width: 52px;
-      height: 52px;
-      background-color: var(--color-primary);
-      color: #FFFFFF;
-      border-radius: var(--radius-md);
-      display: inline-flex;
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 0.75rem;
+      display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.625rem;
-      margin-bottom: 1rem;
-      box-shadow: 0 4px 6px -1px rgba(36, 59, 83, 0.2);
+    }
+    .login-brand-logo-img {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      object-fit: contain;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+      border: 2px solid var(--color-border);
+      background-color: transparent;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .login-brand-logo-img:hover {
+      transform: scale(1.04);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
     }
   </style>
 </head>
@@ -81,9 +91,9 @@
   <div class="login-container">
     <div class="login-brand-header">
       <div class="login-brand-logo">
-        <i class="bi bi-building"></i>
+        <img src="{{ url_for('static', filename='images/logo.png') }}" alt="Miracle Boys Hostel" class="login-brand-logo-img">
       </div>
-      <h1 class="h3 fw-bold text-dark mb-1">Miracle Hostel</h1>
+      <h1 class="h3 fw-bold text-dark mb-1">Miracle Boys Hostel</h1>
       <p class="text-muted small mb-0">Central Administrator Management Portal</p>
     </div>
 
