@@ -122,7 +122,7 @@ python run.py
 Open browser at `http://127.0.0.1:5000`.
 
 **Local Development Admin Credentials:**
-- **Email:** `admin@123`
+- **Admin ID:** `admin`
 - **Password:** `1234`
 
 ---

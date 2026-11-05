@@ -20,7 +20,7 @@ services:
       - key: AADHAAR_ENCRYPTION_KEY
         value: eb191d49248a430a2bab448ceda54d36
       - key: ADMIN_EMAIL
-        value: miraclehostel09@gmail.com
+        value: admin
       - key: ADMIN_USERNAME
         value: admin
       - key: ADMIN_DEFAULT_PASSWORD

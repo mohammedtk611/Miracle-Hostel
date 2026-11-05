@@ -91,7 +91,7 @@ class Config:
     RESIDENT_RETENTION_DAYS = int(os.environ.get('RESIDENT_RETENTION_DAYS', 365))
     APP_NAME = "Miracle Hostel"
     ADMIN_USERNAME = os.environ.get('ADMIN_USERNAME', 'admin')
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@123')
+    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin')
 
 
 class DevelopmentConfig(Config):

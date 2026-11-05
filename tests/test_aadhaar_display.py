@@ -27,7 +27,7 @@ def app(tmp_path):
     test_app.config['PRIVATE_STORAGE_FOLDER'] = tmp_path / 'storage' / 'private' / 'residents'
     with test_app.app_context():
         db.create_all()
-        admin = Admin(email="admin@123", username="admin", is_active=True)
+        admin = Admin(email="admin", username="admin", is_active=True)
         admin.set_password("1234")
         db.session.add(admin)
         db.session.commit()
@@ -51,7 +51,7 @@ def auth_client(app):
     """Authenticated administrator client fixture."""
     c = app.test_client()
     c.post('/auth/login', data={
-        'email': 'admin@123',
+        'email': 'admin',
         'password': '1234'
     }, follow_redirects=True)
     return c

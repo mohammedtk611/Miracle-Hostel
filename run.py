@@ -65,18 +65,19 @@ def seed_or_create_admin(email=None, username=None, password=None):
     Works reliably across development and production on Render.
     """
     with app.app_context():
-        email = email or os.environ.get('ADMIN_EMAIL') or 'miraclehostel09@gmail.com'
+        email = email or os.environ.get('ADMIN_EMAIL') or 'admin'
         username = username or os.environ.get('ADMIN_USERNAME') or 'admin'
         password = password or os.environ.get('ADMIN_DEFAULT_PASSWORD') or '1234'
 
         existing_admin = Admin.query.first()
         if existing_admin:
-            existing_admin.email = email
+            if existing_admin.email == 'admin@123':
+                existing_admin.email = 'admin'
             existing_admin.username = username
             existing_admin.set_password(password)
             existing_admin.is_active = True
             db.session.commit()
-            print(f"[Miracle Hostel] Existing administrator updated: {username} ({email})")
+            print(f"[Miracle Hostel] Existing administrator updated: {username} ({existing_admin.email})")
             AuditService.log(
                 action=AuditAction.PASSWORD_CHANGE,
                 entity_type='Admin',
@@ -124,7 +125,7 @@ def run_server():
     print(f"  > Local Loopback:     http://127.0.0.1:{port}")
     if local_ip and local_ip != '127.0.0.1':
         print(f"  > Mobile on Wi-Fi:    http://{local_ip}:{port}")
-    print(f"  > Sign-in Email:      admin@123")
+    print(f"  > Sign-in ID:         admin")
     print(f"  > Sign-in Password:   1234")
     if port != requested_port:
         print(f"  [Notice] Port {requested_port} was in use; started on port {port}.")

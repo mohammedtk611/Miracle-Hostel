@@ -21,7 +21,7 @@ def app():
     with test_app.app_context():
         db.create_all()
         admin = Admin(
-            email="admin@123",
+            email="admin",
             username="admin",
             is_active=True
         )
@@ -46,7 +46,7 @@ def auth_client(app):
     """Authenticated administrator client fixture."""
     c = app.test_client()
     c.post('/auth/login', data={
-        'email': 'admin@123',
+        'email': 'admin',
         'password': '1234'
     }, follow_redirects=True)
     return c

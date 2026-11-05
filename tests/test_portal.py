@@ -1,7 +1,7 @@
 """
 Comprehensive Test Suite for Miracle Hostel Management Portal.
 Phase 3 Authentication & Security Testing:
-- Successful login using email 'admin@123' and password '1234'
+- Successful login using ID 'admin' and password '1234'
 - Invalid credentials handling
 - Session ends when website/browser is closed (non-permanent session cookie)
 - Secure logout and session clearing
@@ -37,9 +37,9 @@ def app():
     test_app = create_app('testing')
     with test_app.app_context():
         db.create_all()
-        # Seed test admin account with requested credentials: admin@123 / 1234
+        # Seed test admin account with requested credentials: admin / 1234
         admin = Admin(
-            email="admin@123",
+            email="admin",
             username="admin",
             is_active=True
         )
@@ -67,7 +67,7 @@ def auth_client(app):
     """Client authenticated as the test administrator."""
     c = app.test_client()
     c.post('/auth/login', data={
-        'email': 'admin@123',
+        'email': 'admin',
         'password': '1234'
     }, follow_redirects=True)
     return c
@@ -127,9 +127,9 @@ def test_authenticated_routes_status_codes(auth_client):
 # 2. AUTHENTICATION, CREDENTIALS & BROWSER SESSION CLOSING TESTS
 # -----------------------------------------------------------------------------
 def test_successful_login_with_custom_credentials(client, app):
-    """Test successful administrator login with email 'admin@123' and password '1234'."""
+    """Test successful administrator login with ID 'admin' and password '1234'."""
     res = client.post('/auth/login', data={
-        'email': 'admin@123',
+        'email': 'admin',
         'password': '1234'
     }, follow_redirects=True)
 
@@ -140,7 +140,7 @@ def test_successful_login_with_custom_credentials(client, app):
         # Verify LoginLog record
         success_log = LoginLog.query.filter_by(status=LoginStatus.SUCCESS).first()
         assert success_log is not None
-        assert success_log.email_attempted == "admin@123"
+        assert success_log.email_attempted == "admin"
 
         # Verify AuditLog record
         audit_entry = AuditLog.query.filter_by(action=AuditAction.LOGIN).first()
@@ -151,7 +151,7 @@ def test_successful_login_with_custom_credentials(client, app):
 def test_session_ends_on_browser_close(client):
     """Verify that sessions are non-permanent (session cookies with no persistent expiry)."""
     res = client.post('/auth/login', data={
-        'email': 'admin@123',
+        'email': 'admin',
         'password': '1234'
     }, follow_redirects=False)
 
@@ -173,7 +173,7 @@ def test_invalid_credentials(client, app):
     """Test login rejection when wrong password or non-existent email is provided."""
     # Wrong password
     res_wrong_pw = client.post('/auth/login', data={
-        'email': 'admin@123',
+        'email': 'admin',
         'password': 'wrongpassword'
     }, follow_redirects=True)
 
@@ -211,7 +211,7 @@ def test_logout(auth_client):
 # -----------------------------------------------------------------------------
 def test_login_rate_limiting(client, app):
     """Verify sliding-window login rate limiting after 5 failed attempts."""
-    target_email = "admin@123"
+    target_email = "admin"
 
     # Make 5 failed attempts
     for i in range(5):
@@ -265,7 +265,7 @@ def test_password_recovery_workflow(client, app):
     """Verify complete password recovery with one-time tokens."""
     # 1. Request recovery token
     res_req = client.post('/auth/forgot-password', data={
-        'email': 'admin@123'
+        'email': 'admin'
     }, follow_redirects=True)
     assert res_req.status_code == 200
     assert b"password recovery instructions have been initiated" in res_req.data
@@ -305,7 +305,7 @@ def test_csrf_protection_enforcement(app):
 
     # Attempt POST without CSRF token
     res = test_client.post('/auth/login', data={
-        'email': 'admin@123',
+        'email': 'admin',
         'password': '1234'
     })
 
