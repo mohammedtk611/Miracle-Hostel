@@ -607,6 +607,7 @@ def retain(resident_code):
 
     resident.resident_status = ResidentStatus.ACTIVE
     resident.notice_date = None
+    resident.leaving_date = None
     resident.updated_at = datetime.utcnow()
     db.session.commit()
 
@@ -866,6 +867,7 @@ def reactivate(resident_code):
     resident.resident_status = ResidentStatus.ACTIVE
     resident.admission_date = parsed_admission_date
     resident.leaving_date = None
+    resident.notice_date = None
     resident.branch_id = target_branch_id
     resident.updated_at = datetime.utcnow()
 

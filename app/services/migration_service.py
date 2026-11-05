@@ -114,6 +114,10 @@ class MigrationService:
                     conn.execute(text("ALTER TABLE residents ADD COLUMN notice_date DATE"))
                     conn.commit()
 
+                # Clean up any inconsistent leaving_date for active residents with no active notice
+                conn.execute(text("UPDATE residents SET leaving_date = NULL WHERE resident_status = 'ACTIVE' AND notice_date IS NULL AND leaving_date IS NOT NULL"))
+                conn.commit()
+
         # 4. Check and add missing columns to branches
         if 'branches' in inspector.get_table_names():
             branch_cols = {c['name'] for c in inspector.get_columns('branches')}

@@ -426,17 +426,18 @@ class Resident(db.Model):
     @property
     def is_leaving_soon(self) -> bool:
         """
-        True if resident is in LEAVING status, or active with a scheduled leaving notice.
+        True if resident is in LEAVING status, or active with an explicit scheduled leaving notice date.
+        ACTIVE residents without a notice date are staying normally.
         """
         if self.resident_status == ResidentStatus.LEAVING:
             return True
         if self.resident_status != ResidentStatus.ACTIVE:
             return False
-        target_date = self.notice_date or self.leaving_date
-        if not target_date:
+        # For ACTIVE residents, they are on notice only if notice_date is set and within timeframe
+        if not self.notice_date:
             return False
         today = date.today()
-        return today <= target_date <= (today + timedelta(days=45))
+        return today <= self.notice_date <= (today + timedelta(days=45))
 
     @property
     def is_eligible_for_deletion(self) -> bool:

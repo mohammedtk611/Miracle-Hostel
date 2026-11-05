@@ -396,3 +396,48 @@ def test_branch_distribution_real_time_occupancy_and_notice_period(auth_client, 
     assert 'Free' in html
     assert 'd-none d-md-table-cell' in html  # Admission Date hidden on mobile
 
+
+def test_branch_distribution_active_vs_leaving_transition(auth_client, app):
+    """
+    Verify:
+    1. Active resident is counted as Stay (green).
+    2. Marked for leaving resident is counted as Notice (yellow).
+    3. Retained resident immediately reverts back to Stay (green).
+    """
+    with app.app_context():
+        # Get Branch 2 (OMR Corridor) which has 2 active residents without notice in seed data
+        b2 = Branch.query.filter_by(branch_code='BR-OMR-02').first()
+        assert b2 is not None
+
+        # Check initial distribution: all active residents are in staying_count
+        dist = next(item for item in DashboardService.get_branch_distribution() if item['branch_code'] == 'BR-OMR-02')
+        assert dist['staying_count'] == 2
+        assert dist['leaving_count'] == 0
+
+        # Mark 1 resident for leaving
+        r1 = b2.residents.filter_by(resident_status=ResidentStatus.ACTIVE).first()
+        r_code = r1.resident_code
+
+    # Mark as leaving via POST
+    res = auth_client.post(f'/residents/{r_code}/mark-leaving', follow_redirects=True)
+    assert res.status_code == 200
+
+    with app.app_context():
+        dist = next(item for item in DashboardService.get_branch_distribution() if item['branch_code'] == 'BR-OMR-02')
+        assert dist['staying_count'] == 1
+        assert dist['leaving_count'] == 1
+
+    # Retain the resident back to ACTIVE
+    res2 = auth_client.post(f'/residents/{r_code}/retain', follow_redirects=True)
+    assert res2.status_code == 200
+
+    with app.app_context():
+        dist = next(item for item in DashboardService.get_branch_distribution() if item['branch_code'] == 'BR-OMR-02')
+        assert dist['staying_count'] == 2
+        assert dist['leaving_count'] == 0
+        r_retained = Resident.query.filter_by(resident_code=r_code).first()
+        assert r_retained.resident_status == ResidentStatus.ACTIVE
+        assert r_retained.leaving_date is None
+        assert r_retained.notice_date is None
+
+
