@@ -101,7 +101,7 @@ def test_login_page_renders_for_unauthenticated(client):
     res = client.get('/auth/login')
     assert res.status_code == 200
     assert b"Sign In to Portal" in res.data
-    assert b"admin@123" in res.data
+    assert b"Administrator Email / ID" in res.data
 
 
 def test_authenticated_routes_status_codes(auth_client):

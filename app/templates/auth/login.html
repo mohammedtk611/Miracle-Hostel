@@ -128,14 +128,12 @@
                 class="form-control border-start-0 ps-0 font-monospace" 
                 id="email" 
                 name="email" 
-                placeholder="miraclehostel09" 
-                value="{{ email or 'miraclehostel09' }}" 
+                value="{{ email or '' }}" 
                 required 
                 autofocus
                 autocomplete="username"
               >
             </div>
-            <div class="form-text text-muted">Administrator account: <code>miraclehostel09</code> / <code>admin@123</code> &bull; Password: <code>1234</code></div>
           </div>
 
           <!-- Password Input with Show/Hide Toggle -->
@@ -155,8 +153,6 @@
                 class="form-control border-start-0 border-end-0 ps-0" 
                 id="password" 
                 name="password" 
-                placeholder="Enter administrator password" 
-                value="1234" 
                 required
                 autocomplete="current-password"
               >
@@ -173,34 +169,18 @@
             </div>
           </div>
 
-          <!-- Automatic Session Termination Notice -->
-          <div class="alert alert-light border small py-2 px-3 mb-4 d-flex align-items-center gap-2 text-muted">
-            <i class="bi bi-clock-history text-primary"></i>
-            <span><strong>Session Policy:</strong> Non-permanent session. Closes immediately when the browser is closed.</span>
-          </div>
-
           <!-- Sign In Submit Button -->
-          <div class="d-grid mb-3">
+          <div class="d-grid mt-4 mb-2">
             <button type="submit" class="btn btn-primary py-2 fw-semibold">
               <i class="bi bi-box-arrow-in-right me-1"></i> Sign In to Portal
             </button>
           </div>
         </form>
-
-        <div class="security-notice mt-3 mb-0">
-          <div class="d-flex align-items-start gap-2">
-            <i class="bi bi-shield-check text-primary mt-1"></i>
-            <div>
-              <strong class="d-block text-dark">Strict Access Architecture</strong>
-              Protected by Flask-Login, PBKDF2 password hashing, rate limiting, and server-side CSRF validation. Public registration is disabled.
-            </div>
-          </div>
-        </div>
       </div>
       
       <div class="card-portal-footer text-center py-3">
         <small class="text-muted">
-          Miracle Hostel &bull; Version 1.0 (Phase 3 Authentication)
+          Miracle Hostel &bull; Version 1.0
         </small>
       </div>
     </div>
